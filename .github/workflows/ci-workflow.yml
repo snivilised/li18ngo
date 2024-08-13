@@ -1,4 +1,4 @@
-name: Astrolib Continuous Integration
+name: Li18ngo Continuous Integration
 on:
   push:
 
