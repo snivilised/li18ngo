@@ -24,25 +24,12 @@ func Reason(name string) string {
 	return fmt.Sprintf("❌ for item named: '%v'", name)
 }
 
-func JoinCwd(segments ...string) string {
+func Root() (string, error) {
 	if current, err := os.Getwd(); err == nil {
-		parent, _ := filepath.Split(current)
-		grand := filepath.Dir(parent)
-		great := filepath.Dir(grand)
-		all := append([]string{great}, segments...)
-
-		return filepath.Join(all...)
+		return current, nil
 	}
 
-	panic("could not get root path")
-}
-
-func Root() string {
-	if current, err := os.Getwd(); err == nil {
-		return current
-	}
-
-	panic("could not get root path")
+	return "", errors.New("could not get root path")
 }
 
 // Repo; the relative path always uses /

@@ -9,7 +9,7 @@ import (
 type Translator interface {
 	Localise(data Localisable) string
 	LanguageInfoRef() utils.RoProp[*LanguageInfo]
-	negotiate(other Translator) Translator
+	negotiate(other Translator) (Translator, error)
 	add(info *LocalizerInfo, source *TranslationSource)
 }
 
@@ -54,7 +54,7 @@ func Use(options ...UseOptionFn) error {
 	}
 
 	if err == nil {
-		applyLanguage(lang)
+		err = applyLanguage(lang)
 	}
 
 	return err
@@ -82,7 +82,7 @@ func verifyLanguage(lang *LanguageInfo) {
 	}
 }
 
-func applyLanguage(lang *LanguageInfo) {
+func applyLanguage(lang *LanguageInfo) error {
 	verifyLanguage(lang)
 	factory := &multiTranslatorFactory{
 		AbstractTranslatorFactory: AbstractTranslatorFactory{
@@ -91,20 +91,30 @@ func applyLanguage(lang *LanguageInfo) {
 		},
 	}
 
-	newTranslator := factory.New(lang)
-	tx = negotiateTranslators(tx, newTranslator)
+	newTranslator, err := factory.New(lang)
+	if err != nil {
+		return err
+	}
+
+	tx, err = negotiateTranslators(tx, newTranslator)
 
 	TxRef = utils.NewRoProp(tx)
+
+	return err
 }
 
-func negotiateTranslators(legacyTX, incomingTX Translator) Translator {
+func negotiateTranslators(legacyTX, incomingTX Translator) (Translator, error) {
+	var (
+		err error
+	)
+
 	result := incomingTX
 
 	if legacyTX != nil {
-		result = legacyTX.negotiate(incomingTX)
+		result, err = legacyTX.negotiate(incomingTX)
 	}
 
-	return result
+	return result, err
 }
 
 // ResetTx, do not use, required for unit testing only and is
@@ -156,7 +166,14 @@ func (t *i18nTranslator) LanguageInfoRef() utils.RoProp[*LanguageInfo] {
 }
 
 func (t *i18nTranslator) Localise(data Localisable) string {
-	return t.mx.localise(data)
+	// TODO: the error is ignored for now, but we should enable
+	// the client to register an error hander. Localise should
+	// be easy to use without worrying about the need to handle
+	// an error that should not really ever happen. Or we revert
+	// to default. There is no reason to ever return an error here.
+	//
+	tx, _ := t.mx.localise(data)
+	return tx
 }
 
 func containsLanguage(languages SupportedLanguages, tag language.Tag) bool {
@@ -165,13 +182,13 @@ func containsLanguage(languages SupportedLanguages, tag language.Tag) bool {
 	})
 }
 
-func (t *i18nTranslator) negotiate(incomingTX Translator) Translator {
+func (t *i18nTranslator) negotiate(incomingTX Translator) (Translator, error) {
 	incomingLang := incomingTX.LanguageInfoRef().Get()
 	legacyLang := t.LanguageInfoRef().Get()
 	incTX, ok := incomingTX.(*i18nTranslator)
 
 	if !ok {
-		panic("unexpected incoming translator instance (not i18nTranslator)")
+		return nil, ErrInvalidTranslator
 	}
 
 	legacySources := legacyLang.From.Sources
@@ -187,7 +204,7 @@ func (t *i18nTranslator) negotiate(incomingTX Translator) Translator {
 		}
 	}
 
-	return t
+	return t, nil
 }
 
 func (t *i18nTranslator) add(info *LocalizerInfo, source *TranslationSource) {

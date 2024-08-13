@@ -34,7 +34,7 @@ type multiTranslatorFactory struct {
 	AbstractTranslatorFactory
 }
 
-func (f *multiTranslatorFactory) New(lang *LanguageInfo) Translator {
+func (f *multiTranslatorFactory) New(lang *LanguageInfo) (Translator, error) {
 	f.setup(lang)
 
 	liRef := utils.NewRoProp(lang)
@@ -46,7 +46,7 @@ func (f *multiTranslatorFactory) New(lang *LanguageInfo) Translator {
 		localizer, err := f.Create(lang, id)
 
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 
 		multi.add(&LocalizerInfo{
@@ -59,5 +59,5 @@ func (f *multiTranslatorFactory) New(lang *LanguageInfo) Translator {
 		mx:              multi,
 		languageInfo:    lang,
 		languageInfoRef: liRef,
-	}
+	}, nil
 }
