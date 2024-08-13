@@ -15,8 +15,10 @@ type multiContainer struct {
 	localizers localizerContainer
 }
 
-func (mc *multiContainer) localise(data Localisable) string {
-	return mc.invoke(mc.find(data.SourceID()), data)
+func (mc *multiContainer) localise(data Localisable) (string, error) {
+	localizer, err := mc.find(data.SourceID())
+
+	return mc.invoke(localizer, data), err
 }
 
 func (mc *multiContainer) add(info *LocalizerInfo) {
@@ -27,10 +29,10 @@ func (mc *multiContainer) add(info *LocalizerInfo) {
 	mc.localizers[info.sourceID] = info.Localizer
 }
 
-func (mc *multiContainer) find(id string) *Localizer {
+func (mc *multiContainer) find(id string) (*Localizer, error) {
 	if loc, found := mc.localizers[id]; found {
-		return loc
+		return loc, nil
 	}
 
-	panic(NewCouldNotFindLocalizerNativeError(id))
+	return nil, NewCouldNotFindLocalizerNativeError(id)
 }

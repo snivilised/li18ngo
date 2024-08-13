@@ -1,6 +1,7 @@
 package utils_test
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 
@@ -35,7 +36,7 @@ var _ = Describe("EnsurePathAt", Ordered, func() {
 				return filepath.Join(string(filepath.Separator), "home", "prodigy"), nil
 			},
 			AbsFunc: func(_ string) (string, error) {
-				panic("not required for these tests")
+				return "", errors.New("not required for these tests")
 			},
 		}
 

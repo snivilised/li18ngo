@@ -7,6 +7,9 @@ import (
 	"golang.org/x/text/language"
 )
 
+// TODO: The error definitions still have yet to be formalised,
+// as they are currently still a bit ad-hoc and not consistent.
+
 // NB: These errors occur prior to or during the process of creating a localizer
 // which by definition means translated content can't be served to the client using
 // the requested locale and therefore have to be displayed untranslated.
@@ -41,3 +44,7 @@ func NewFailedToCreateTranslatorNativeError(tag language.Tag) error {
 		"i18n: failed to create translator for language '%v'", tag,
 	)
 }
+
+var ErrInvalidTranslator = errors.New(
+	"i18n: invalid incoming translator instance (not i18nTranslator)",
+)
