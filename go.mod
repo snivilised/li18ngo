@@ -1,4 +1,4 @@
-module github.com/snivilised/astrolib
+module github.com/snivilised/li18ngo
 
 go 1.22.0
 
