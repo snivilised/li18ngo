@@ -1,18 +1,21 @@
 package helpers
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 )
 
+// Path; the relative path always uses /
 func Path(parent, relative string) string {
 	segments := strings.Split(relative, "/")
 	return filepath.Join(append([]string{parent}, segments...)...)
 }
 
+// Normalise; the relative path always uses /
 func Normalise(p string) string {
 	return strings.ReplaceAll(p, "/", string(filepath.Separator))
 }
@@ -42,19 +45,23 @@ func Root() string {
 	panic("could not get root path")
 }
 
+// Repo; the relative path always uses /
 func Repo(relative string) string {
-	_, filename, _, _ := runtime.Caller(0) //nolint:dogsled // ignore
-	return Path(filepath.Dir(filename), relative)
+	cmd := exec.Command("git", "rev-parse", "--show-toplevel")
+	output, _ := cmd.Output()
+	repo := strings.TrimSpace(string(output))
+
+	return Path(repo, relative)
 }
 
-func Log() string {
+func Log() (string, error) {
 	if current, err := os.Getwd(); err == nil {
 		parent, _ := filepath.Split(current)
 		grand := filepath.Dir(parent)
 		great := filepath.Dir(grand)
 
-		return filepath.Join(great, "Test", "test.log")
+		return filepath.Join(great, "Test", "test.log"), nil
 	}
 
-	panic("could not get root path")
+	return "", errors.New("could not get path")
 }
