@@ -2,22 +2,24 @@ package translate
 
 import (
 	"github.com/snivilised/li18ngo/internal/lo"
-	"github.com/snivilised/li18ngo/utils"
 	"golang.org/x/text/language"
 )
 
-type Translator interface {
-	Localise(data Localisable) string
-	LanguageInfoRef() utils.RoProp[*LanguageInfo]
-	negotiate(other Translator) (Translator, error)
-	add(info *LocalizerInfo, source *TranslationSource)
-}
+type (
+	Translator interface {
+		Localise(data Localisable) string
+		LanguageInfo() *LanguageInfo
+		negotiate(other Translator) (Translator, error)
+		add(info *LocalizerInfo, source *TranslationSource)
+	}
 
-var DefaultLanguage = utils.NewRoProp(language.BritishEnglish)
-var tx Translator
-var TxRef utils.RoProp[Translator] = utils.NewRoProp(tx)
+	localizerContainer map[string]*Localizer
+)
 
-type localizerContainer map[string]*Localizer
+var (
+	DefaultLanguage = language.BritishEnglish
+	Tx              Translator
+)
 
 // Use, must be called by the client before any string data
 // can be translated. If the client requests the default
@@ -36,7 +38,7 @@ func Use(options ...UseOptionFn) error {
 	o := &UseOptions{}
 
 	o.DefaultIsAcceptable = true
-	o.Tag = DefaultLanguage.Get()
+	o.Tag = DefaultLanguage
 
 	for _, fo := range options {
 		fo(o)
@@ -46,7 +48,7 @@ func Use(options ...UseOptionFn) error {
 
 	if !containsLanguage(lang.Supported, o.Tag) {
 		if o.DefaultIsAcceptable {
-			o.Tag = DefaultLanguage.Get()
+			o.Tag = DefaultLanguage
 			lang.Tag = o.Tag
 		} else {
 			err = NewFailedToCreateTranslatorNativeError(o.Tag)
@@ -87,7 +89,7 @@ func applyLanguage(lang *LanguageInfo) error {
 	factory := &multiTranslatorFactory{
 		AbstractTranslatorFactory: AbstractTranslatorFactory{
 			Create: lang.Create,
-			legacy: tx,
+			legacy: Tx,
 		},
 	}
 
@@ -96,9 +98,7 @@ func applyLanguage(lang *LanguageInfo) error {
 		return err
 	}
 
-	tx, err = negotiateTranslators(tx, newTranslator)
-
-	TxRef = utils.NewRoProp(tx)
+	Tx, err = negotiateTranslators(Tx, newTranslator)
 
 	return err
 }
@@ -128,8 +128,7 @@ func ResetTx() {
 	// would require passing that state around in many places, making the code
 	// much more brittle and cumbersome to maintain.
 	//
-	tx = nil
-	TxRef = utils.NewRoProp(tx)
+	Tx = nil
 }
 
 // NewLanguageInfo gets a new instance of Language info from the use options
@@ -138,9 +137,9 @@ func ResetTx() {
 func NewLanguageInfo(o *UseOptions) *LanguageInfo {
 	return &LanguageInfo{
 		UseOptions: *o,
-		Default:    DefaultLanguage.Get(),
+		Default:    DefaultLanguage,
 		Supported: SupportedLanguages{
-			DefaultLanguage.Get(),
+			DefaultLanguage,
 			language.AmericanEnglish,
 		},
 	}
@@ -150,19 +149,18 @@ func NewLanguageInfo(o *UseOptions) *LanguageInfo {
 // registered Localizers. The data parameter must be a go template
 // defining the input parameters and the translatable message content.
 func Text(data Localisable) string {
-	return tx.Localise(data)
+	return Tx.Localise(data)
 }
 
 // i18nTranslator provides the translation implementation used by the
 // Text function
 type i18nTranslator struct {
-	mx              *multiContainer
-	languageInfo    *LanguageInfo
-	languageInfoRef utils.RoProp[*LanguageInfo]
+	mx           *multiContainer
+	languageInfo *LanguageInfo
 }
 
-func (t *i18nTranslator) LanguageInfoRef() utils.RoProp[*LanguageInfo] {
-	return t.languageInfoRef
+func (t *i18nTranslator) LanguageInfo() *LanguageInfo {
+	return t.languageInfo
 }
 
 func (t *i18nTranslator) Localise(data Localisable) string {
@@ -183,8 +181,8 @@ func containsLanguage(languages SupportedLanguages, tag language.Tag) bool {
 }
 
 func (t *i18nTranslator) negotiate(incomingTX Translator) (Translator, error) {
-	incomingLang := incomingTX.LanguageInfoRef().Get()
-	legacyLang := t.LanguageInfoRef().Get()
+	incomingLang := incomingTX.LanguageInfo()
+	legacyLang := t.LanguageInfo()
 	incTX, ok := incomingTX.(*i18nTranslator)
 
 	if !ok {
