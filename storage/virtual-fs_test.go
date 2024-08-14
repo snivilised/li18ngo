@@ -76,7 +76,7 @@ var _ = Describe("virtual-fs", Ordered, func() {
 		nfs = storage.UseNativeFS()
 
 		if err := translate.Use(func(o *translate.UseOptions) {
-			o.Tag = translate.DefaultLanguage.Get()
+			o.Tag = translate.DefaultLanguage
 		}); err != nil {
 			Fail(err.Error())
 		}

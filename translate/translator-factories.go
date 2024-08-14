@@ -1,9 +1,5 @@
 package translate
 
-import (
-	"github.com/snivilised/li18ngo/utils"
-)
-
 // LocalizerCreatorFn represents the signature of the function can optionally
 // provide to override how an i18n Localizer is created.
 type LocalizerCreatorFn func(li *LanguageInfo, sourceID string) (*Localizer, error)
@@ -37,7 +33,6 @@ type multiTranslatorFactory struct {
 func (f *multiTranslatorFactory) New(lang *LanguageInfo) (Translator, error) {
 	f.setup(lang)
 
-	liRef := utils.NewRoProp(lang)
 	multi := &multiContainer{
 		localizers: make(localizerContainer),
 	}
@@ -56,8 +51,7 @@ func (f *multiTranslatorFactory) New(lang *LanguageInfo) (Translator, error) {
 	}
 
 	return &i18nTranslator{
-		mx:              multi,
-		languageInfo:    lang,
-		languageInfoRef: liRef,
+		mx:           multi,
+		languageInfo: lang,
 	}, nil
 }
