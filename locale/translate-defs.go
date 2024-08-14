@@ -1,6 +1,8 @@
 package locale
 
-const Li18ngoSourceID = "github.com/snivilised/li18ngo"
+const (
+	Li18ngoSourceID = "github.com/snivilised/li18ngo"
+)
 
 type li18ngoTemplData struct{}
 

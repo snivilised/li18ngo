@@ -1,6 +1,8 @@
 package translate
 
 import (
+	"io/fs"
+
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
 )
@@ -85,6 +87,11 @@ type UseOptions struct {
 	// Custom set-able by the client for what ever purpose is required.
 	//
 	Custom any
+
+	// FS is a file system from where translations are loaded from. This
+	// does not have to performed explicitly asa it will be created using
+	// the From field if not specified.
+	FS fs.StatFS
 }
 
 // LanguageInfo information pertaining to setting language. Auto detection

@@ -11,7 +11,34 @@ silent: true
 
 dotenv: [".env"]
 
+vars:
+  FORMAT: json
+  BINARY_NAME: li18ngo
+  DEPLOY_DIR: ./locale/deploy
+  OUT_DIR: ./locale/out
+  L10N_DIR: ./locale/out/l10n
+  #
+  SOURCE_LANG: en-GB
+  SOURCE_ACTIVE: "active.{{.SOURCE_LANG}}.{{.FORMAT}}"
+  #
+  LANGUAGE_US: en-US
+  US_OUT_DIR: "{{.OUT_DIR}}/{{.LANGUAGE_US}}"
+  ACTIVE_US: "{{.BINARY_NAME}}.active.en-US.{{.FORMAT}}"
+  TRANSLATE_US: "{{.BINARY_NAME}}.translate.en-US.{{.FORMAT}}"
+  TRANSLATE_US_FILEPATH: "{{.US_OUT_DIR}}/{{.TRANSLATE_US}}"
+
 tasks:
+  show:
+    cmds:
+      - echo "SOURCE_ACTIVE => {{.SOURCE_ACTIVE}}"
+      - echo "US_OUT_DIR => {{.US_OUT_DIR}}"
+      - echo "ACTIVE_US => {{.ACTIVE_US}}"
+      - echo "TRANSLATE_US => {{.TRANSLATE_US}}"
+      - echo "TRANSLATE_US_FILEPATH => {{.TRANSLATE_US_FILEPATH}}"
+      - echo "rm -rf "{{.OUT_DIR}}/*" --recursive"
+      # - echo " => {{.}}"
+      # - echo " => {{.}}"
+
   # === build ================================================
 
   b:
@@ -24,9 +51,9 @@ tasks:
     cmds:
       - go test ./...
 
-  ti:
+  trans:
     cmds:
-      - go test ./i18n
+      - go test ./translate
 
   dry:
     cmds:
@@ -105,44 +132,53 @@ tasks:
 
   clear:
     cmds:
-      - rm ./i18n/out/* --recursive
+      - rm -rf {{.OUT_DIR}}/* --recursive
 
   # extract i18m messages
   extract:
     cmds:
+      - mkdir -p ./locale/out/l10n
       - goi18n extract
         -format json
         -sourceLanguage "en-GB"
-        -outdir ./i18n/out/l10n
+        -outdir ./locale/out/l10n
 
   # new translation
+  # where is the default? locale/default/li18ngo.active.en-GB.json not populated
+  # ! creates: locale/out/l10n/active.en-GB.json => extracted output
+  # ! creates: locale/out/l10n/translate.en-US.json => empty
   newt:
     deps: [extract]
     cmds:
-      - touch ./i18n/out/l10n/translate.en-US.json
+      - touch ./locale/out/l10n/translate.en-US.json
 
   # derive a translation from the default
+  # ! the default active file does not contain hashes, just the extracted content
+  # ! the translate file contains the hashes
+  # ! the active foreign file (locale/out/l10n/active.en-US.json) is empty
+  # ! pass the translate file(locale/out/l10n/translate.en-US.json) to your translator
+  # 
   merge:
     cmds:
       - goi18n merge
         -format json
         -sourceLanguage "en-GB"
-        -outdir ./i18n/out
-        ./i18n/out/active.en-GB.json ./i18n/out/l10n/translate.en-US.json
+        -outdir ./locale/out/l10n
+        ./locale/out/l10n/active.en-GB.json ./locale/out/l10n/translate.en-US.json
 
   # update existing translations
   # after running this task, the translation file generated will
   # contain only the new translations. Update the active file,
   # with the new translations. Also, need to copy the default
-  # file (active.en-GB.json) back into ./i18n/default
+  # file (active.en-GB.json) back into ./locale/default
   update:
     deps: [extract]
     cmds:
       - goi18n merge
         -format json
         -sourceLanguage "en-GB"
-        -outdir ./i18n/out
-        ./i18n/out/active.en-GB.json ./i18n/deploy/active.en-US.json
+        -outdir ./locale/out
+        ./locale/out/active.en-GB.json ./i18n/deploy/active.en-US.json
 
   # run this after manual translation has occurred to integrate it
   # back into the translation file. Unfortunately, this task doesn't
@@ -155,4 +191,4 @@ tasks:
         -format json
         -sourceLanguage "en-US"
         -outdir ./i18n/temp
-        ./i18n/out/translate.en-US.json ./i18n/deploy/active.en-US.json
+        ./locale/out/translate.en-US.json ./i18n/deploy/active.en-US.json

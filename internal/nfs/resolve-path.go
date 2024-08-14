@@ -1,4 +1,4 @@
-package utils
+package nfs
 
 import (
 	"os"
@@ -60,24 +60,26 @@ func ResolvePath(path string, mocks ...ResolveMocks) string {
 				return path
 			},
 		)
-	} else {
-		result = lo.TernaryF(result[0] == '~',
-			func() string {
-				if h, err := os.UserHomeDir(); err == nil {
-					return filepath.Join(h, result[1:])
-				}
 
-				return path
-			},
-			func() string {
-				if a, err := filepath.Abs(result); err == nil {
-					return a
-				}
-
-				return path
-			},
-		)
+		return result
 	}
+
+	result = lo.TernaryF(result[0] == '~',
+		func() string {
+			if h, err := os.UserHomeDir(); err == nil {
+				return filepath.Join(h, result[1:])
+			}
+
+			return path
+		},
+		func() string {
+			if a, err := filepath.Abs(result); err == nil {
+				return a
+			}
+
+			return path
+		},
+	)
 
 	return result
 }

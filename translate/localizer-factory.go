@@ -8,17 +8,19 @@ import (
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/snivilised/li18ngo/internal/lo"
-	"github.com/snivilised/li18ngo/utils"
+	"github.com/snivilised/li18ngo/internal/nfs"
 	"golang.org/x/text/language"
 )
 
-func createLocalizer(lang *LanguageInfo, sourceID string) (*Localizer, error) {
+func createLocalizer(lang *LanguageInfo, sourceID string,
+	dirFS nfs.MkDirAllFS,
+) (*Localizer, error) {
 	bundle := i18n.NewBundle(lang.Tag)
 	bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
 
 	if lang.Tag != lang.Default {
 		txSource := lang.From.Sources[sourceID]
-		path := resolveBundlePath(lang, txSource)
+		path := resolveBundlePath(lang, txSource, dirFS)
 		_, err := bundle.LoadMessageFile(path)
 
 		if (err != nil) && (!lang.DefaultIsAcceptable) {
@@ -33,22 +35,15 @@ func createLocalizer(lang *LanguageInfo, sourceID string) (*Localizer, error) {
 	return i18n.NewLocalizer(bundle, supported...), nil
 }
 
-func resolveBundlePath(lang *LanguageInfo, txSource TranslationSource) string {
-	filename := lo.TernaryF(txSource.Name == "",
-		func() string {
-			return fmt.Sprintf("active.%v.json", lang.Tag)
-		},
-		func() string {
-			return fmt.Sprintf("%v.active.%v.json", txSource.Name, lang.Tag)
-		},
-	)
-
-	path := lo.Ternary(txSource.Path != "" && utils.FolderExists(txSource.Path),
+func resolveBundlePath(lang *LanguageInfo, txSource TranslationSource,
+	dirFS nfs.MkDirAllFS,
+) string {
+	path := lo.Ternary(txSource.Path != "" && dirFS.DirectoryExists(txSource.Path),
 		txSource.Path,
 		lang.From.Path,
 	)
 
-	directory := lo.TernaryF(path != "" && utils.FolderExists(path),
+	directory := lo.TernaryF(path != "" && dirFS.DirectoryExists(path),
 		func() string {
 			resolved, _ := filepath.Abs(path)
 			return resolved
@@ -56,6 +51,15 @@ func resolveBundlePath(lang *LanguageInfo, txSource TranslationSource) string {
 		func() string {
 			exe, _ := os.Executable()
 			return filepath.Dir(exe)
+		},
+	)
+
+	filename := lo.TernaryF(txSource.Name == "",
+		func() string {
+			return fmt.Sprintf("active.%v.json", lang.Tag)
+		},
+		func() string {
+			return fmt.Sprintf("%v.active.%v.json", txSource.Name, lang.Tag)
 		},
 	)
 
