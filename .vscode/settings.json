@@ -4,11 +4,13 @@
     "--fast"
   ],
   "cSpell.words": [
+    "li18ngo",
     "avfs",
     "beezledub",
     "bodyclose",
     "cmds",
     "cobrass",
+    "coverpkg",
     "coverprofile",
     "cubiest",
     "deadcode",
@@ -21,6 +23,7 @@
     "extendio",
     "faydeaudeau",
     "fieldalignment",
+    "fsys",
     "GOARCH",
     "goconst",
     "gocritic",
@@ -72,6 +75,8 @@
     "unparam",
     "varcheck",
     "watchv",
+    "watchvc",
+    "watchvi",
     "Wrapf",
     "xpander",
     "zeroable"

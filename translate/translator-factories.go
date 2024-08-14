@@ -1,8 +1,17 @@
 package translate
 
+import (
+	"io/fs"
+
+	"github.com/snivilised/li18ngo/internal/lo"
+	"github.com/snivilised/li18ngo/internal/nfs"
+)
+
 // LocalizerCreatorFn represents the signature of the function can optionally
 // provide to override how an i18n Localizer is created.
-type LocalizerCreatorFn func(li *LanguageInfo, sourceID string) (*Localizer, error)
+type LocalizerCreatorFn func(li *LanguageInfo, sourceID string,
+	dirFS nfs.MkDirAllFS,
+) (*Localizer, error)
 
 type AbstractTranslatorFactory struct {
 	Create LocalizerCreatorFn
@@ -33,12 +42,32 @@ type multiTranslatorFactory struct {
 func (f *multiTranslatorFactory) New(lang *LanguageInfo) (Translator, error) {
 	f.setup(lang)
 
+	queryFS := lo.TernaryF(lang.FS != nil,
+		func() fs.StatFS {
+			return lang.FS
+		},
+		func() fs.StatFS {
+			native := nfs.NewReadDirFS(lang.From.Path)
+			return nfs.NewQueryStatusFS(native)
+		},
+	)
+
+	dirFS := lo.TernaryF(lang.FS != nil,
+		func() nfs.MkDirAllFS {
+			return nfs.FromNativeDirFS(lang.FS)
+		},
+		func() nfs.MkDirAllFS {
+			return nfs.FromNativeDirFS(queryFS)
+		},
+	)
+
 	multi := &multiContainer{
 		localizers: make(localizerContainer),
+		queryFS:    queryFS,
 	}
 
 	for id := range lang.From.Sources {
-		localizer, err := f.Create(lang, id)
+		localizer, err := f.Create(lang, id, dirFS)
 
 		if err != nil {
 			return nil, err

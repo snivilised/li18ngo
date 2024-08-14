@@ -1,5 +1,7 @@
 package translate
 
+import "io/fs"
+
 type multiplexor struct {
 }
 
@@ -13,6 +15,7 @@ func (mx *multiplexor) invoke(localizer *Localizer, data Localisable) string {
 type multiContainer struct {
 	multiplexor
 	localizers localizerContainer
+	queryFS    fs.StatFS
 }
 
 func (mc *multiContainer) localise(data Localisable) (string, error) {

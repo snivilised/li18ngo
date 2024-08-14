@@ -1,11 +1,9 @@
-package utils
+package nfs
 
 import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/snivilised/li18ngo/storage"
 )
 
 // EnsurePathAt ensures that the specified path exists (including any non
@@ -23,7 +21,10 @@ import (
 // to be appended manually onto the end of the path.
 // If vfs is not provided, then the path is ensured directly on the native file
 // system.
-func EnsurePathAt(path, defaultFilename string, perm int, vfs ...storage.VirtualFS) (at string, err error) {
+
+func EnsurePathAt(path, defaultFilename string, perm int,
+	vfs ...MkDirAllFS,
+) (at string, err error) {
 	var (
 		directory, file string
 	)
@@ -37,7 +38,7 @@ func EnsurePathAt(path, defaultFilename string, perm int, vfs ...storage.Virtual
 
 	if len(vfs) > 0 {
 		if !vfs[0].DirectoryExists(directory) {
-			err = vfs[0].MkdirAll(directory, os.FileMode(perm))
+			err = vfs[0].MkDirAll(directory, os.FileMode(perm))
 		}
 	} else {
 		err = os.MkdirAll(directory, os.FileMode(perm))

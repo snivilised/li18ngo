@@ -1,10 +1,10 @@
-package matchers
+package nfs_test
 
 import (
 	"fmt"
 
 	"github.com/onsi/gomega/types"
-	"github.com/snivilised/li18ngo/storage"
+	"github.com/snivilised/li18ngo/internal/nfs"
 )
 
 type PathExistsMatcher struct {
@@ -21,9 +21,9 @@ func ExistInFS(fs interface{}) types.GomegaMatcher {
 }
 
 func (m *PathExistsMatcher) Match(actual interface{}) (bool, error) {
-	vfs, fileSystemOK := m.vfs.(storage.VirtualFS)
+	vfs, fileSystemOK := m.vfs.(nfs.ExistsInFS)
 	if !fileSystemOK {
-		return false, fmt.Errorf("❌ matcher expected a VirtualFS instance (%T)", vfs)
+		return false, fmt.Errorf("❌ matcher expected a ExistsInFS instance (%T)", vfs)
 	}
 
 	if actualPath, dirOK := actual.(AsDirectory); dirOK {
