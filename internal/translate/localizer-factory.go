@@ -14,7 +14,7 @@ import (
 
 func createLocalizer(lang *LanguageInfo, sourceID string,
 	dirFS nfs.MkDirAllFS,
-) (*Localizer, error) {
+) (*i18n.Localizer, error) {
 	bundle := i18n.NewBundle(lang.Tag)
 	bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
 

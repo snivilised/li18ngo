@@ -154,7 +154,7 @@ tasks:
 
   # derive a translation from the default
   # ! the default active file does not contain hashes, just the extracted content
-  # ! the translate file contains the hashes
+  # ! the foreign translate file contains the hashes
   # ! the active foreign file (locale/out/l10n/active.en-US.json) is empty
   # ! pass the translate file(locale/out/l10n/translate.en-US.json) to your translator
   # 

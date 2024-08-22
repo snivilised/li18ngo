@@ -48,7 +48,7 @@ __goi18n__ instructs the user to manually create an empty translation message fi
 
 - run __newt__ task: (generates default language file `./locale/out/l10n/active.en-GB.json` and empty `./locale/out/l10n/li18ngo.translation.en-US.json` file). This task can be run from the root folder, __goi18n__ will recursively search the directory tree for files with translate-able content, ie files with template definitions (___i18n.Message___)
 - run __merge__ task: derives a translation file for the requested language __en-US__ using 2 files as inputs: source active file (`./locale/out/active.en-GB.json`) and the empty __en-US__ translate file (`./locale/out/l10n/li18ngo.translation.en-US.json`), both of which were generated in the previous step.
-- hand the translate file to your translator for them to translate
+- hand the translate file (`translate.en-US.json`) to your translator for them to translate
 - rename the translate file to the active equivalent (`li18ngo.translation.en-US.json`); ie rename `li18ngo.translation.en-US.json` to `li18ngo.active.en-US.json`. If `li18ngo.translation.en-US.json` exists as an empty file, then delete it as its not required. Save this into the __deploy__ folder. This file will be deployed with the application.
 
 ### 🧩 Update Existing Translations (⚠️ not finalised)
