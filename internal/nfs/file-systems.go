@@ -3,15 +3,20 @@ package nfs
 import (
 	"io/fs"
 	"os"
-	"path/filepath"
-	"strings"
 )
+
+// NewStatFS creates a new fs.StatFS from a path
+func NewStatFS(path string) fs.StatFS {
+	return StatFSFromFS(os.DirFS(path))
+}
 
 type readDirFS struct {
 	fsys fs.FS
 }
 
-// NewReadDirFS creates a ReadDirFS file system
+// NewReadDirFS creates a ReadDirFS file system, which
+// contains the ReadDir method that reads entries of a path
+// from the native file system.
 func NewReadDirFS(path string) fs.ReadDirFS {
 	return &readDirFS{
 		fsys: os.DirFS(path),
@@ -33,7 +38,8 @@ type queryStatusFS struct {
 	fsys fs.FS
 }
 
-func NewQueryStatusFS(fsys fs.FS) fs.StatFS {
+// StatFSFromFS creates a file system upon which Stat can be invoked
+func StatFSFromFS(fsys fs.FS) fs.StatFS {
 	return &queryStatusFS{
 		fsys: fsys,
 	}
@@ -57,25 +63,25 @@ type nativeDirFS struct {
 // NewNativeDirFS creates an instance of MkDirAllFS from a path
 func NewNativeDirFS(path string) MkDirAllFS {
 	return &nativeDirFS{
-		statFS: NewQueryStatusFS(NewReadDirFS(path)),
+		statFS: StatFSFromFS(NewReadDirFS(path)),
 	}
 }
 
-// FromNativeDirFS creates an instance of MkDirAllFS from a fs.FS
-func FromNativeDirFS(fsys fs.FS) MkDirAllFS {
+// DirFSFromFS creates a native instance of MkDirAllFS from a fs.FS
+func DirFSFromFS(fsys fs.FS) MkDirAllFS {
 	return &nativeDirFS{
-		statFS: NewQueryStatusFS(fsys),
+		statFS: StatFSFromFS(fsys),
 	}
 }
 
 // FileExists return true if item at path exists as a file
 func (f *nativeDirFS) FileExists(path string) bool {
-	fi, err := f.statFS.Stat(path)
+	info, err := f.statFS.Stat(path)
 	if err != nil {
 		return false
 	}
 
-	if fi.IsDir() {
+	if info.IsDir() {
 		return false
 	}
 
@@ -84,16 +90,12 @@ func (f *nativeDirFS) FileExists(path string) bool {
 
 // DirectoryExists return true if item at path exists as a directory
 func (f *nativeDirFS) DirectoryExists(path string) bool {
-	if strings.HasPrefix(path, string(filepath.Separator)) {
-		path = path[1:]
-	}
-
-	fileInfo, err := f.statFS.Stat(path)
+	info, err := f.statFS.Stat(path)
 	if err != nil {
 		return false
 	}
 
-	if !fileInfo.IsDir() {
+	if !info.IsDir() {
 		return false
 	}
 

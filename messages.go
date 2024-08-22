@@ -1,26 +1,10 @@
-package locale
+package li18ngo
 
 import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/snivilised/li18ngo/internal/translate"
+	"github.com/snivilised/li18ngo/locale"
 )
-
-const (
-	TestGrafficoSourceID = "github.com/snivilised/graffico"
-)
-
-type UsingConfigFileTemplData struct {
-	Li18ngoTemplData
-	ConfigFileName string
-}
-
-func (td UsingConfigFileTemplData) Message() *i18n.Message {
-	return &i18n.Message{
-		ID:          "using-config-file",
-		Description: "Message to indicate which config is being used",
-		Other:       "Using config file: {{.ConfigFileName}}",
-	}
-}
 
 type TemplData struct{}
 
@@ -61,7 +45,7 @@ func (td LocalisationTemplData) Message() *i18n.Message {
 type GrafficoData struct{}
 
 func (td GrafficoData) SourceID() string {
-	return TestGrafficoSourceID
+	return locale.TestGrafficoSourceID
 }
 
 // 🧊 Pavement Graffiti Report

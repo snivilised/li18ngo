@@ -1,14 +1,17 @@
-package translate_test
+package li18ngo_test
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2" //nolint:revive // ginkgo ok
 	. "github.com/onsi/gomega"    //nolint:revive // gomega ok
+	"github.com/snivilised/li18ngo"
 	"github.com/snivilised/li18ngo/internal/helpers"
-	"github.com/snivilised/li18ngo/translate"
-
+	"github.com/snivilised/li18ngo/internal/nfs"
+	"github.com/snivilised/li18ngo/internal/translate"
+	"github.com/snivilised/li18ngo/locale"
 	"golang.org/x/text/language"
 )
 
@@ -16,16 +19,19 @@ var _ = Describe("Text", Ordered, func() {
 	var (
 		repo                string
 		l10nPath            string
-		testTranslationFile translate.TranslationFiles
+		testTranslationFile li18ngo.TranslationFiles
 	)
 
 	BeforeAll(func() {
 		repo = helpers.Repo("")
 		l10nPath = helpers.Path(repo, "test/data/l10n")
-		// Expect(utils.FolderExists(l10nPath)).To(BeTrue())
+		queryFS := nfs.NewNativeDirFS(l10nPath)
+		Expect(queryFS.DirectoryExists(l10nPath)).To(BeTrue(),
+			fmt.Sprintf("l10n '%v' path does not exist", l10nPath),
+		)
 
-		testTranslationFile = translate.TranslationFiles{
-			translate.Li18ngoSourceID: translate.TranslationSource{Name: "test"},
+		testTranslationFile = li18ngo.TranslationFiles{
+			li18ngo.Li18ngoSourceID: li18ngo.TranslationSource{Name: "test"},
 		}
 	})
 
@@ -35,8 +41,8 @@ var _ = Describe("Text", Ordered, func() {
 
 	Context("Default Language", func() {
 		BeforeEach(func() {
-			if err := translate.Use(func(o *translate.UseOptions) {
-				o.Tag = translate.DefaultLanguage
+			if err := li18ngo.Use(func(o *li18ngo.UseOptions) {
+				o.Tag = li18ngo.DefaultLanguage
 				o.From.Sources = testTranslationFile
 			}); err != nil {
 				Fail(err.Error())
@@ -45,20 +51,20 @@ var _ = Describe("Text", Ordered, func() {
 
 		Context("given: ThirdPartyError", func() {
 			It("🧪 should: contain the third party error text", func() {
-				if err := translate.Use(func(o *translate.UseOptions) {
+				if err := li18ngo.Use(func(o *li18ngo.UseOptions) {
 					o.Tag = language.BritishEnglish
 				}); err != nil {
 					Fail(err.Error())
 				}
 
-				err := translate.NewThirdPartyErr(errors.New("computer says no"))
+				err := li18ngo.NewThirdPartyErr(errors.New("computer says no"))
 				Expect(err.Error()).To(ContainSubstring("computer says no"))
 			})
 
 			Context("Text", func() {
 				Context("given: a template data instance", func() {
 					It("🧪 should: evaluate translated text", func() {
-						Expect(translate.Text(translate.ThirdPartyErrorTemplData{
+						Expect(li18ngo.Text(li18ngo.ThirdPartyErrorTemplData{
 							Error: errors.New("out of stock"),
 						})).NotTo(BeNil())
 					})
@@ -67,9 +73,9 @@ var _ = Describe("Text", Ordered, func() {
 		})
 	})
 
-	Context("Foreign Language", func() {
+	Context("Foreign Language (en-US)", func() {
 		BeforeEach(func() {
-			if err := translate.Use(func(o *translate.UseOptions) {
+			if err := li18ngo.Use(func(o *li18ngo.UseOptions) {
 				o.Tag = language.AmericanEnglish
 				o.From.Path = l10nPath
 				o.From.Sources = testTranslationFile
@@ -80,14 +86,15 @@ var _ = Describe("Text", Ordered, func() {
 
 		Context("Text", func() {
 			Context("given: a template data instance", func() {
-				XIt("🧪 should: evaluate translated text(internationalization)", func() {
-					Expect(translate.Text(translate.InternationalisationTemplData{})).To(
+				It("🧪 should: evaluate translated text(internationalization)", func() {
+					text := li18ngo.Text(li18ngo.InternationalisationTemplData{})
+					Expect(text).To(
 						Equal("internationalization"),
 					)
 				})
 
-				XIt("🧪 should: evaluate translated text(localization)", func() {
-					Expect(translate.Text(translate.LocalisationTemplData{})).To(
+				It("🧪 should: evaluate translated text(localization)", func() {
+					Expect(li18ngo.Text(li18ngo.LocalisationTemplData{})).To(
 						Equal("localization"),
 					)
 				})
@@ -97,20 +104,20 @@ var _ = Describe("Text", Ordered, func() {
 
 	Context("Multiple Sources", func() {
 		Context("Foreign Language", func() {
-			XIt("🧪 should: translate text with the correct localizer", func() {
-				if err := translate.Use(func(o *translate.UseOptions) {
+			It("🧪 should: translate text with the correct localizer", func() {
+				if err := li18ngo.Use(func(o *li18ngo.UseOptions) {
 					o.Tag = language.AmericanEnglish
-					o.From = translate.LoadFrom{
+					o.From = li18ngo.LoadFrom{
 						Path: l10nPath,
-						Sources: translate.TranslationFiles{
-							translate.Li18ngoSourceID: translate.TranslationSource{Name: "test"},
-							GrafficoSourceID:          translate.TranslationSource{Name: "test.graffico"},
+						Sources: li18ngo.TranslationFiles{
+							li18ngo.Li18ngoSourceID:     li18ngo.TranslationSource{Name: "test"},
+							locale.TestGrafficoSourceID: li18ngo.TranslationSource{Name: "test.graffico"},
 						},
 					}
 				}); err != nil {
 					Fail(err.Error())
 				}
-				actual := translate.Text(PavementGraffitiReportTemplData{
+				actual := li18ngo.Text(li18ngo.PavementGraffitiReportTemplData{
 					Primary: "Violet",
 				})
 				Expect(actual).To(Equal(expectUS))
@@ -121,19 +128,19 @@ var _ = Describe("Text", Ordered, func() {
 	When("extendio source not provided", func() {
 		Context("Default Language", func() {
 			It("🧪 should: create factory that contains the extendio source", func() {
-				if err := translate.Use(func(o *translate.UseOptions) {
+				if err := li18ngo.Use(func(o *li18ngo.UseOptions) {
 					o.Tag = language.BritishEnglish
-					o.From = translate.LoadFrom{
+					o.From = li18ngo.LoadFrom{
 						Path: l10nPath,
-						Sources: translate.TranslationFiles{
-							GrafficoSourceID: translate.TranslationSource{Name: "test.graffico"},
+						Sources: li18ngo.TranslationFiles{
+							locale.TestGrafficoSourceID: li18ngo.TranslationSource{Name: "test.graffico"},
 						},
 					}
 				}); err != nil {
 					Fail(err.Error())
 				}
 
-				actual := translate.Text(translate.InternationalisationTemplData{})
+				actual := li18ngo.Text(li18ngo.InternationalisationTemplData{})
 				Expect(actual).To(Equal("internationalisation"))
 			})
 		})
@@ -142,7 +149,7 @@ var _ = Describe("Text", Ordered, func() {
 	Context("translation source contains path", func() {
 		Context("Foreign Language", func() {
 			Context("given: source path exists", func() {
-				XIt("🧪 should: create localizer from source path", func() {
+				It("🧪 should: create localizer from source path", func() {
 					actual := testTranslationPath(&textTE{
 						sourcePath:        l10nPath,
 						defaultAcceptable: true,
@@ -153,7 +160,7 @@ var _ = Describe("Text", Ordered, func() {
 			})
 
 			Context("given: path exists", func() {
-				XIt("🧪 should: create localizer from path", func() {
+				It("🧪 should: create localizer from path", func() {
 					actual := testTranslationPath(&textTE{
 						path:              l10nPath,
 						defaultAcceptable: true,
@@ -175,6 +182,8 @@ var _ = Describe("Text", Ordered, func() {
 
 			Context("given: neither path exists", func() {
 				XIt("🧪 should: create localizer using default language", func() {
+					// Its not clear what this test is supposed to do
+					//
 					defer func() {
 						pe := recover()
 						if err, ok := pe.(error); !ok || !strings.Contains(err.Error(),
@@ -186,8 +195,6 @@ var _ = Describe("Text", Ordered, func() {
 					_ = testTranslationPath(&textTE{
 						defaultAcceptable: false,
 					})
-
-					Fail("❌ expected panic due translation file not available with exe")
 				})
 			})
 		})

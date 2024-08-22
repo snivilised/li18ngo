@@ -1,6 +1,6 @@
 module github.com/snivilised/li18ngo
 
-go 1.22.0
+go 1.23.0
 
 require (
 	github.com/nicksnyder/go-i18n/v2 v2.4.0

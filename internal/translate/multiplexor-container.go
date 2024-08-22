@@ -1,12 +1,16 @@
 package translate
 
-import "io/fs"
+import (
+	"io/fs"
+
+	"github.com/nicksnyder/go-i18n/v2/i18n"
+)
 
 type multiplexor struct {
 }
 
-func (mx *multiplexor) invoke(localizer *Localizer, data Localisable) string {
-	return localizer.MustLocalize(&LocalizeConfig{
+func (mx *multiplexor) invoke(localizer *i18n.Localizer, data Localisable) (string, error) {
+	return localizer.Localize(&i18n.LocalizeConfig{
 		DefaultMessage: data.Message(),
 		TemplateData:   data,
 	})
@@ -21,18 +25,22 @@ type multiContainer struct {
 func (mc *multiContainer) localise(data Localisable) (string, error) {
 	localizer, err := mc.find(data.SourceID())
 
-	return mc.invoke(localizer, data), err
+	if err != nil {
+		return "", err
+	}
+
+	return mc.invoke(localizer, data)
 }
 
 func (mc *multiContainer) add(info *LocalizerInfo) {
-	if _, found := mc.localizers[info.sourceID]; found {
+	if _, found := mc.localizers[info.SourceID]; found {
 		return
 	}
 
-	mc.localizers[info.sourceID] = info.Localizer
+	mc.localizers[info.SourceID] = info.Localizer
 }
 
-func (mc *multiContainer) find(id string) (*Localizer, error) {
+func (mc *multiContainer) find(id string) (*i18n.Localizer, error) {
 	if loc, found := mc.localizers[id]; found {
 		return loc, nil
 	}

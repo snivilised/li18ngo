@@ -1,17 +1,20 @@
-package translate_test
+package li18ngo_test
 
 import (
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2" //nolint:revive // ok
 	. "github.com/onsi/gomega"    //nolint:revive // ok
-	"github.com/snivilised/li18ngo/translate"
+
+	"github.com/snivilised/li18ngo"
+	"github.com/snivilised/li18ngo/internal/translate"
+	"github.com/snivilised/li18ngo/locale"
 	"golang.org/x/text/language"
 )
 
-func TestTranslate(t *testing.T) {
+func TestLi18ngo(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Translate Suite")
+	RunSpecs(t, "Li18ngo Suite")
 }
 
 type textTE struct {
@@ -31,13 +34,13 @@ func testTranslationPath(entry *textTE) string {
 	// this test form required, because DescribeTable can't be used
 	// due to not being able to setup state correctly, eg l10nPath
 	//
-	if err := translate.Use(func(o *translate.UseOptions) {
+	if err := li18ngo.Use(func(o *translate.UseOptions) {
 		o.Tag = language.AmericanEnglish
 		o.DefaultIsAcceptable = entry.defaultAcceptable
 		o.From = translate.LoadFrom{
 			Path: entry.path,
 			Sources: translate.TranslationFiles{
-				GrafficoSourceID: translate.TranslationSource{
+				locale.TestGrafficoSourceID: translate.TranslationSource{
 					Path: entry.sourcePath,
 					Name: "test.graffico",
 				},
@@ -47,7 +50,7 @@ func testTranslationPath(entry *textTE) string {
 		Fail(err.Error())
 	}
 
-	return translate.Text(PavementGraffitiReportTemplData{
+	return li18ngo.Text(li18ngo.PavementGraffitiReportTemplData{
 		Primary: "Violet",
 	})
 }

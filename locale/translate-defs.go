@@ -4,8 +4,8 @@ const (
 	Li18ngoSourceID = "github.com/snivilised/li18ngo"
 )
 
-type li18ngoTemplData struct{}
+type Li18ngoTemplData struct{}
 
-func (td li18ngoTemplData) SourceID() string {
+func (td Li18ngoTemplData) SourceID() string {
 	return Li18ngoSourceID
 }

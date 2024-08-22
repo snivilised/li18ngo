@@ -7,18 +7,12 @@ import (
 	"github.com/snivilised/li18ngo/internal/nfs"
 )
 
-// LocalizerCreatorFn represents the signature of the function can optionally
-// provide to override how an i18n Localizer is created.
-type LocalizerCreatorFn func(li *LanguageInfo, sourceID string,
-	dirFS nfs.MkDirAllFS,
-) (*Localizer, error)
-
-type AbstractTranslatorFactory struct {
+type translatorFactory struct {
 	Create LocalizerCreatorFn
 	legacy Translator
 }
 
-func (f *AbstractTranslatorFactory) setup(lang *LanguageInfo) {
+func (f *translatorFactory) setup(lang *LanguageInfo) {
 	verifyLanguage(lang)
 
 	if f.Create == nil {
@@ -36,7 +30,7 @@ func (f *AbstractTranslatorFactory) setup(lang *LanguageInfo) {
 // name as the dependency would have created it for, then this file will
 // be loaded as per usual.
 type multiTranslatorFactory struct {
-	AbstractTranslatorFactory
+	translatorFactory
 }
 
 func (f *multiTranslatorFactory) New(lang *LanguageInfo) (Translator, error) {
@@ -48,16 +42,16 @@ func (f *multiTranslatorFactory) New(lang *LanguageInfo) (Translator, error) {
 		},
 		func() fs.StatFS {
 			native := nfs.NewReadDirFS(lang.From.Path)
-			return nfs.NewQueryStatusFS(native)
+			return nfs.StatFSFromFS(native)
 		},
 	)
 
 	dirFS := lo.TernaryF(lang.FS != nil,
 		func() nfs.MkDirAllFS {
-			return nfs.FromNativeDirFS(lang.FS)
+			return nfs.DirFSFromFS(lang.FS)
 		},
 		func() nfs.MkDirAllFS {
-			return nfs.FromNativeDirFS(queryFS)
+			return nfs.DirFSFromFS(queryFS)
 		},
 	)
 
@@ -74,7 +68,7 @@ func (f *multiTranslatorFactory) New(lang *LanguageInfo) (Translator, error) {
 		}
 
 		multi.add(&LocalizerInfo{
-			sourceID:  id,
+			SourceID:  id,
 			Localizer: localizer,
 		})
 	}
