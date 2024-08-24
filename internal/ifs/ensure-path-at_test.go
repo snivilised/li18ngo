@@ -1,4 +1,4 @@
-package nfs_test
+package ifs_test
 
 import (
 	"errors"
@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"    //nolint:revive // ok
 
 	"github.com/snivilised/li18ngo/internal/helpers"
-	"github.com/snivilised/li18ngo/internal/nfs"
+	"github.com/snivilised/li18ngo/internal/ifs"
 )
 
 var _ = Describe("EnsurePathAt", Ordered, func() {
@@ -48,7 +48,7 @@ var _ = Describe("EnsurePathAt", Ordered, func() {
 				location += string(filepath.Separator)
 			}
 
-			actual, err := nfs.EnsurePathAt(location, "default-test.log", perm, mfs)
+			actual, err := ifs.EnsurePathAt(location, "default-test.log", perm, mfs)
 			directory, _ := filepath.Split(actual)
 			directory = filepath.Clean(directory)
 			expected := TrimRoot(helpers.Path(home, entry.expected))

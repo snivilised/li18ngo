@@ -4,6 +4,8 @@ import (
 	"os"
 )
 
+// 📚 package nfs: file system definitions
+
 type (
 	// ExistsInFS provides the facility to check the existence
 	// of a path in the underlying file system.

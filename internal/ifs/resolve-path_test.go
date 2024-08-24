@@ -1,4 +1,4 @@
-package nfs_test
+package ifs_test
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/ginkgo/v2" //nolint:revive // ok
 	. "github.com/onsi/gomega"    //nolint:revive // ok
 
-	"github.com/snivilised/li18ngo/internal/nfs"
+	"github.com/snivilised/li18ngo/internal/ifs"
 )
 
 type RPEntry struct {
@@ -41,19 +41,19 @@ func fakeAbsResolver(path string) (string, error) {
 var _ = Describe("ResolvePath", func() {
 	DescribeTable("Overrides provided",
 		func(entry *RPEntry) {
-			mocks := nfs.ResolveMocks{
+			mocks := ifs.ResolveMocks{
 				HomeFunc: fakeHomeResolver,
 				AbsFunc:  fakeAbsResolver,
 			}
 
 			if filepath.Separator == '/' {
-				actual := nfs.ResolvePath(entry.path, mocks)
+				actual := ifs.ResolvePath(entry.path, mocks)
 				Expect(actual).To(Equal(entry.expect))
 			} else {
 				normalisedPath := strings.ReplaceAll(entry.path, "/", string(filepath.Separator))
 				normalisedExpect := strings.ReplaceAll(entry.expect, "/", string(filepath.Separator))
 
-				actual := nfs.ResolvePath(normalisedPath, mocks)
+				actual := ifs.ResolvePath(normalisedPath, mocks)
 				Expect(actual).To(Equal(normalisedExpect))
 			}
 		},
@@ -96,25 +96,25 @@ var _ = Describe("ResolvePath", func() {
 	When("No overrides provided", func() {
 		Context("and: home", func() {
 			It("🧪 should: not fail", func() {
-				nfs.ResolvePath("~/")
+				ifs.ResolvePath("~/")
 			})
 		})
 
 		Context("and: abs cwd", func() {
 			It("🧪 should: not fail", func() {
-				nfs.ResolvePath("./")
+				ifs.ResolvePath("./")
 			})
 		})
 
 		Context("and: abs parent", func() {
 			It("🧪 should: not fail", func() {
-				nfs.ResolvePath("../")
+				ifs.ResolvePath("../")
 			})
 		})
 
 		Context("and: abs grand parent", func() {
 			It("🧪 should: not fail", func() {
-				nfs.ResolvePath("../..")
+				ifs.ResolvePath("../..")
 			})
 		})
 	})

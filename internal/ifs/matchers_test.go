@@ -1,10 +1,10 @@
-package nfs_test
+package ifs_test
 
 import (
 	"fmt"
 
 	"github.com/onsi/gomega/types"
-	"github.com/snivilised/li18ngo/internal/nfs"
+	"github.com/snivilised/li18ngo/nfs"
 )
 
 type PathExistsMatcher struct {

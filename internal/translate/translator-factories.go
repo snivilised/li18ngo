@@ -3,8 +3,9 @@ package translate
 import (
 	"io/fs"
 
+	"github.com/snivilised/li18ngo/internal/ifs"
 	"github.com/snivilised/li18ngo/internal/lo"
-	"github.com/snivilised/li18ngo/internal/nfs"
+	"github.com/snivilised/li18ngo/nfs"
 )
 
 type translatorFactory struct {
@@ -41,17 +42,17 @@ func (f *multiTranslatorFactory) New(lang *LanguageInfo) (Translator, error) {
 			return lang.FS
 		},
 		func() fs.StatFS {
-			native := nfs.NewReadDirFS(lang.From.Path)
-			return nfs.StatFSFromFS(native)
+			native := ifs.NewReadDirFS(lang.From.Path)
+			return ifs.StatFSFromFS(native)
 		},
 	)
 
 	dirFS := lo.TernaryF(lang.FS != nil,
 		func() nfs.MkDirAllFS {
-			return nfs.DirFSFromFS(lang.FS)
+			return ifs.DirFSFromFS(lang.FS)
 		},
 		func() nfs.MkDirAllFS {
-			return nfs.DirFSFromFS(queryFS)
+			return ifs.DirFSFromFS(queryFS)
 		},
 	)
 

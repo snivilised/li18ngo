@@ -1,8 +1,10 @@
-package nfs
+package ifs
 
 import (
 	"io/fs"
 	"os"
+
+	"github.com/snivilised/li18ngo/nfs"
 )
 
 // NewStatFS creates a new fs.StatFS from a path
@@ -61,14 +63,14 @@ type nativeDirFS struct {
 }
 
 // NewNativeDirFS creates an instance of MkDirAllFS from a path
-func NewNativeDirFS(path string) MkDirAllFS {
+func NewNativeDirFS(path string) nfs.MkDirAllFS {
 	return &nativeDirFS{
 		statFS: StatFSFromFS(NewReadDirFS(path)),
 	}
 }
 
 // DirFSFromFS creates a native instance of MkDirAllFS from a fs.FS
-func DirFSFromFS(fsys fs.FS) MkDirAllFS {
+func DirFSFromFS(fsys fs.FS) nfs.MkDirAllFS {
 	return &nativeDirFS{
 		statFS: StatFSFromFS(fsys),
 	}

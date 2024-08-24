@@ -2,9 +2,12 @@ package li18ngo
 
 import (
 	"github.com/snivilised/li18ngo/internal/translate"
+	"github.com/snivilised/li18ngo/nfs"
 )
 
 var (
+	// 🌐 translate
+
 	// DefaultLanguage represents the default language of this module
 	DefaultLanguage = translate.DefaultLanguage
 
@@ -36,10 +39,42 @@ var (
 )
 
 type (
+	// 🌐 nfs
+
+	// ExistsInFS provides the facility to check the existence
+	// of a path in the underlying file system.
+	ExistsInFS = nfs.ExistsInFS
+
+	// MkDirAllFS is a file system with a MkDirAll method.
+	MkDirAllFS = nfs.MkDirAllFS
+
+	// 🌐 translate
+
 	// LoadFrom denotes where to load the translation file from
 	LoadFrom = translate.LoadFrom
 
+	// LocalisableError is an error that is translate-able (Localisable)
+	LocalisableError = translate.LocalisableError
+
+	// LanguageInfo information pertaining to setting language. Auto detection
+	// is not supported. Any executable that supports i18n, should perform
+	// auto detection and then invoke Use, with the detected language tag
+	LanguageInfo = translate.LanguageInfo
+
+	// LocalizerCreatorFn represents the signature of the function that can
+	// optionally be provided to override how an i18n Localizer is created.
+	LocalizerCreatorFn = translate.LocalizerCreatorFn
+
+	// SupportedLanguages is a collection of the language Tags that a module
+	// can define to express what languages it contains translations for.
+	SupportedLanguages = translate.SupportedLanguages
+
 	// TranslationSource
+	// Name: core name of dependency's translation file. The actual file
+	// is derived from this name in the form: <name>.active.<lang>.json;
+	// eg li18ngo.active.en-GB.json.
+	// Path: file system path to the translation file. If missing, then
+	// it will default to the location of the executable file.
 	TranslationSource = translate.TranslationSource
 
 	// TranslationFiles maps a source id to a TranslationSource
