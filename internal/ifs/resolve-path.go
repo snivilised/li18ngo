@@ -1,4 +1,4 @@
-package nfs
+package ifs
 
 import (
 	"os"

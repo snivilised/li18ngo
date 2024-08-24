@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"    //nolint:revive // gomega ok
 	"github.com/snivilised/li18ngo"
 	"github.com/snivilised/li18ngo/internal/helpers"
-	"github.com/snivilised/li18ngo/internal/nfs"
+	"github.com/snivilised/li18ngo/internal/ifs"
 	"github.com/snivilised/li18ngo/internal/translate"
 	"github.com/snivilised/li18ngo/locale"
 	"golang.org/x/text/language"
@@ -25,7 +25,7 @@ var _ = Describe("Text", Ordered, func() {
 	BeforeAll(func() {
 		repo = helpers.Repo("")
 		l10nPath = helpers.Path(repo, "test/data/l10n")
-		queryFS := nfs.NewNativeDirFS(l10nPath)
+		queryFS := ifs.NewNativeDirFS(l10nPath)
 		Expect(queryFS.DirectoryExists(l10nPath)).To(BeTrue(),
 			fmt.Sprintf("l10n '%v' path does not exist", l10nPath),
 		)

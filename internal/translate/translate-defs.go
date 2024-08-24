@@ -5,12 +5,13 @@ import (
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/snivilised/li18ngo/internal/lo"
-	"github.com/snivilised/li18ngo/internal/nfs"
+	"github.com/snivilised/li18ngo/nfs"
 	"golang.org/x/text/language"
 )
 
 // 📚 package: translate contains internal li18ngo definitions that
-// client does not need direct access to.
+// client does not need direct access to, unless explicitly exposed
+// by li18ngo-api.go.
 
 const (
 	// Li18ngoSourceID the id that represents this module. If client want
@@ -47,7 +48,7 @@ type (
 		Path string
 
 		// Sources are the translation files that need to be loaded. They represent
-		// the client app/library its dependencies.
+		// the client app/library dependencies.
 		//
 		// The source id would typically be the name of a package that is the source
 		// of string messages that are to be translated. Actually, we could use
@@ -59,8 +60,8 @@ type (
 		Sources TranslationFiles
 	}
 
-	// LocalizerCreatorFn represents the signature of the function can optionally
-	// provide to override how an i18n Localizer is created.
+	// LocalizerCreatorFn represents the signature of the function that can
+	// optionally be provided to override how an i18n Localizer is created.
 	LocalizerCreatorFn func(li *LanguageInfo, sourceID string,
 		dirFS nfs.MkDirAllFS,
 	) (*i18n.Localizer, error)
@@ -144,7 +145,7 @@ func (lf *LoadFrom) AddSource(sourceID string, source *TranslationSource) {
 }
 
 var (
-	Tx              Translator
+	tx              Translator
 	DefaultLanguage = language.BritishEnglish
 )
 
@@ -152,13 +153,13 @@ var (
 // registered Localizers. The data parameter must be a go template
 // defining the input parameters and the translatable message content.
 func Text(data Localisable) string {
-	return Tx.Localise(data)
+	return tx.Localise(data)
 }
 
 func ResetTx() {
 	// required only for unit tests
 	//
-	Tx = nil
+	tx = nil
 }
 
 func containsLanguage(languages SupportedLanguages, tag language.Tag) bool {

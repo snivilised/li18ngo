@@ -1,10 +1,12 @@
-package nfs
+package ifs
 
 import (
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/snivilised/li18ngo/nfs"
 )
 
 // EnsurePathAt ensures that the specified path exists (including any non
@@ -24,7 +26,7 @@ import (
 // system.
 
 func EnsurePathAt(path, defaultFilename string, perm fs.FileMode,
-	vfs ...MkDirAllFS,
+	vfs ...nfs.MkDirAllFS,
 ) (at string, err error) {
 	var (
 		directory, file string

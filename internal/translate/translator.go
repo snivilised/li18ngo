@@ -53,7 +53,7 @@ func Use(options ...UseOptionFn) error {
 	}
 
 	if err == nil {
-		Tx, err = applyLanguage(lang, Tx)
+		tx, err = applyLanguage(lang, tx)
 	}
 
 	return err
