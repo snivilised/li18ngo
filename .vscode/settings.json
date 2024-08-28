@@ -3,8 +3,10 @@
   "go.lintFlags": [
     "--fast"
   ],
+  "gopls": {
+    "buildFlags": ["-tags=tools"]
+  },
   "cSpell.words": [
-    "li18ngo",
     "avfs",
     "beezledub",
     "bodyclose",
@@ -40,7 +42,9 @@
     "govet",
     "graffico",
     "ineffassign",
+    "ioutils",
     "jibberjabber",
+    "li18ngo",
     "linters",
     "mattn",
     "memfs",
@@ -72,6 +76,7 @@
     "tparallel",
     "typecheck",
     "unconvert",
+    "unmarshaling",
     "unparam",
     "varcheck",
     "watchv",
