@@ -1,4 +1,12 @@
 ---
+# =============================================================================
+# Note, if working from a foreign repo, please install using:
+# go install github.com/snivilised/li18ngo/cmd/lingo@latest
+# ---
+# If working on this module, then perform a local install using:
+# go install ./...
+# =============================================================================
+#
 # dependencies:
 # - ginkgo
 # - goi18n
@@ -134,7 +142,11 @@ tasks:
     cmds:
       - rm -rf {{.OUT_DIR}}/* --recursive
 
-  # extract i18m messages
+  sort:
+    cmds:
+      - lingo -path ./locale/out/l10n/active.en-GB.json
+
+  # extract i18m messages (then sort it, by ID)
   extract:
     cmds:
       - mkdir -p ./locale/out/l10n
@@ -142,9 +154,9 @@ tasks:
         -format json
         -sourceLanguage "en-GB"
         -outdir ./locale/out/l10n
+      - lingo -p ./locale/out/l10n/active.en-GB.json
 
   # new translation
-  # where is the default? locale/default/li18ngo.active.en-GB.json not populated
   # ! creates: locale/out/l10n/active.en-GB.json => extracted output
   # ! creates: locale/out/l10n/translate.en-US.json => empty
   newt:

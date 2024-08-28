@@ -32,6 +32,24 @@ In this example, the `i18n.Message` type refers to the alias not the original ty
 
 This does also have other implications. When using ___go-i18n___, do not define your own local package of the name `i18n` because that will cause a conflict with ___go-i18n___ which is defined using this package name. I have taken to using an alternative name of `locale` so that no conflicts occur. However, this is not mandatory because you can just use a different import alias, but this is just adding friction that is best avoided, particularly when authoring a library package to be consumed by third parties.
 
+## 📦 Install li18ngo
+
+li18ngo contains a helper program, ___lingo___ which provides facilities to assist and improve aspects of i18n curation. Currently, the command contains a ___sort___ sub-command; other sub commands may be added in the future.
+
+When extracting content, the resulting default active file (the one representing the native language _en-GB_) contains `i18n.Message` entries indexed by the message ID. However, they may not be in any particular order, probably just the order in which they are discovered by the ___go-i18n___ extract command. When working with large translation files, it really is unhelpful if the order of the messages is non deterministic. This is the raison d'etre of the lingo sort sub command, it will sort the json file by message ID.
+
+When the extract is run, the sort is invoked on the native active file `./locale/out/l10n/active.en-GB.json`. This means that before running the extract, the user needs to ensure that the `lingo` command is installed.
+
+From within `li18ngo`, the installation can be performed locally from the root directory using:
+
+> go install ./...
+
+From a foreign repo, when using `li18ngo` to develop translations for other packages, the installation can be completed by running
+
+> go install github.com/snivilised/li18ngo/cmd/lingo@latest
+
+When running the merge task, the sorted order will be maintained when creating the translation files, eg `translate.en-US`.
+
 ## 📁 Directory Structure
 
 The local directory structure is as follows:
