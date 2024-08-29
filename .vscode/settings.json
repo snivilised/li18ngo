@@ -12,6 +12,7 @@
     "bodyclose",
     "cmds",
     "cobrass",
+    "copyloopvar",
     "coverpkg",
     "coverprofile",
     "cubiest",
