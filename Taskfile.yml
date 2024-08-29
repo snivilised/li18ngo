@@ -177,6 +177,7 @@ tasks:
         -sourceLanguage "en-GB"
         -outdir ./locale/out/l10n
         ./locale/out/l10n/active.en-GB.json ./locale/out/l10n/translate.en-US.json
+      - lingo -path ./locale/out/l10n/translate.en-US.json -hash
 
   # update existing translations
   # after running this task, the translation file generated will
