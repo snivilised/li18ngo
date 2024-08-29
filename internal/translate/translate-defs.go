@@ -4,7 +4,7 @@ import (
 	"io/fs"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
-	"github.com/snivilised/li18ngo/internal/lo"
+	"github.com/pkg/errors"
 	"github.com/snivilised/li18ngo/nfs"
 	"golang.org/x/text/language"
 )
@@ -22,6 +22,10 @@ const (
 	// correct i18n.Localizer (identified by the SourceID). The Source is
 	// statically defined for all templates defined in li18ngo.
 	Li18ngoSourceID = "github.com/snivilised/li18ngo"
+)
+
+var (
+	ErrSafePanicWarning = errors.New("please ensure li18ngo.Use is invoked")
 )
 
 type (
@@ -148,22 +152,3 @@ var (
 	tx              Translator
 	DefaultLanguage = language.BritishEnglish
 )
-
-// Text is the function to use to obtain a string created from
-// registered Localizers. The data parameter must be a go template
-// defining the input parameters and the translatable message content.
-func Text(data Localisable) string {
-	return tx.Localise(data)
-}
-
-func ResetTx() {
-	// required only for unit tests
-	//
-	tx = nil
-}
-
-func containsLanguage(languages SupportedLanguages, tag language.Tag) bool {
-	return lo.ContainsBy(languages, func(t language.Tag) bool {
-		return t == tag
-	})
-}
