@@ -1,6 +1,7 @@
 package translate
 
 import (
+	"github.com/snivilised/li18ngo/internal/lo"
 	"golang.org/x/text/language"
 )
 
@@ -57,6 +58,31 @@ func Use(options ...UseOptionFn) error {
 	}
 
 	return err
+}
+
+func ResetTx() {
+	// required only for unit tests
+	//
+	tx = nil
+}
+
+// Text is the function to use to obtain a string created from
+// registered Localizers. The data parameter must be a go template
+// defining the input parameters and the translatable message content.
+// Will panic with ErrSafePanicWarning, if the Use function has not been
+// called before invoking Text.
+func Text(data Localisable) string {
+	if tx != nil {
+		return tx.Localise(data)
+	}
+
+	panic(ErrSafePanicWarning)
+}
+
+func containsLanguage(languages SupportedLanguages, tag language.Tag) bool {
+	return lo.ContainsBy(languages, func(t language.Tag) bool {
+		return t == tag
+	})
 }
 
 type i18nTranslator struct {

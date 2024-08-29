@@ -11,6 +11,10 @@ var (
 	// DefaultLanguage represents the default language of this module
 	DefaultLanguage = translate.DefaultLanguage
 
+	// ErrSafePanicWarning is the error raised as a panic if the client
+	// has accidentally not called Use before working with li18ngo.
+	ErrSafePanicWarning = translate.ErrSafePanicWarning
+
 	// Li18ngoSourceID the id that represents this module. If client want
 	// to provides translations for languages that li18ngo does not, then
 	// the localizer the create created for this purpose should use this

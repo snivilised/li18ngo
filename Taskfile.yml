@@ -61,7 +61,7 @@ tasks:
 
   trans:
     cmds:
-      - go test ./translate
+      - go test ./internal/translate
 
   dry:
     cmds:
