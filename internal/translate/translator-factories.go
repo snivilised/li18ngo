@@ -59,6 +59,8 @@ func (f *multiTranslatorFactory) New(lang *LanguageInfo) (Translator, error) {
 	multi := &multiContainer{
 		localizers: make(localizerContainer),
 		queryFS:    queryFS,
+		dirFS:      dirFS,
+		create:     f.Create,
 	}
 
 	for id := range lang.From.Sources {

@@ -4,6 +4,7 @@ import (
 	"io/fs"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/snivilised/li18ngo/nfs"
 )
 
 type multiplexor struct {
@@ -20,13 +21,25 @@ type multiContainer struct {
 	multiplexor
 	localizers localizerContainer
 	queryFS    fs.StatFS
+	dirFS      nfs.MkDirAllFS
+	create     LocalizerCreatorFn
 }
 
 func (mc *multiContainer) localise(data Localisable) (string, error) {
-	localizer, err := mc.find(data.SourceID())
+	id := data.SourceID()
+	localizer, err := mc.find(id)
 
 	if err != nil {
-		return "", err
+		localizer, err = mc.mitigate(id)
+
+		if err != nil {
+			return "", err
+		}
+
+		mc.add(&LocalizerInfo{
+			Localizer: localizer,
+			SourceID:  id,
+		})
 	}
 
 	return mc.invoke(localizer, data)
@@ -46,4 +59,19 @@ func (mc *multiContainer) find(id string) (*i18n.Localizer, error) {
 	}
 
 	return nil, NewCouldNotFindLocalizerNativeError(id)
+}
+
+func (mc *multiContainer) mitigate(id string) (*i18n.Localizer, error) {
+	return mc.create(&LanguageInfo{
+		UseOptions: UseOptions{
+			Tag:                 DefaultLanguage,
+			DefaultIsAcceptable: true,
+			Create:              mc.create,
+			FS:                  mc.queryFS,
+		},
+		Default: DefaultLanguage,
+		Supported: SupportedLanguages{
+			DefaultLanguage,
+		},
+	}, id, mc.dirFS)
 }
