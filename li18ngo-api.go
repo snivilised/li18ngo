@@ -27,6 +27,7 @@ var (
 	// Text is the function to use to obtain a string created from
 	// registered Localizers. The data parameter must be a go template
 	// defining the input parameters and the translatable message content.
+	// Not threadsafe.
 	Text = translate.Text
 
 	// Use, must be called before any string data can be translated.
