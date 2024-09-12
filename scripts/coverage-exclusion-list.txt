@@ -1,3 +1,4 @@
 github.com/snivilised/li18ngo/cmd/lingo
+github.com/snivilised/li18ngo/internal/lab
 github.com/snivilised/li18ngo/internal/third/lo
 github.com/snivilised/li18ngo/tools

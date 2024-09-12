@@ -10,8 +10,8 @@ import (
 	. "github.com/onsi/ginkgo/v2" //nolint:revive // ok
 	. "github.com/onsi/gomega"    //nolint:revive // ok
 
-	"github.com/snivilised/li18ngo/internal/helpers"
 	"github.com/snivilised/li18ngo/internal/ifs"
+	"github.com/snivilised/li18ngo/internal/lab"
 )
 
 var _ = Describe("EnsurePathAt", Ordered, func() {
@@ -51,7 +51,7 @@ var _ = Describe("EnsurePathAt", Ordered, func() {
 			actual, err := ifs.EnsurePathAt(location, "default-test.log", perm, mfs)
 			directory, _ := filepath.Split(actual)
 			directory = filepath.Clean(directory)
-			expected := TrimRoot(helpers.Path(home, entry.expected))
+			expected := TrimRoot(lab.Path(home, entry.expected))
 
 			Expect(err).Error().To(BeNil())
 			Expect(actual).To(Equal(expected))
