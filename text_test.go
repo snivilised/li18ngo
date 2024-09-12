@@ -8,8 +8,8 @@ import (
 	. "github.com/onsi/ginkgo/v2" //nolint:revive // ginkgo ok
 	. "github.com/onsi/gomega"    //nolint:revive // gomega ok
 	"github.com/snivilised/li18ngo"
-	"github.com/snivilised/li18ngo/internal/helpers"
 	"github.com/snivilised/li18ngo/internal/ifs"
+	"github.com/snivilised/li18ngo/internal/lab"
 	"github.com/snivilised/li18ngo/internal/translate"
 	"github.com/snivilised/li18ngo/locale"
 	"golang.org/x/text/language"
@@ -23,8 +23,8 @@ var _ = Describe("Text", Ordered, func() {
 	)
 
 	BeforeAll(func() {
-		repo = helpers.Repo("")
-		l10nPath = helpers.Path(repo, "test/data/l10n")
+		repo = lab.Repo("")
+		l10nPath = lab.Path(repo, "test/data/l10n")
 		queryFS := ifs.NewNativeDirFS(l10nPath)
 		Expect(queryFS.DirectoryExists(l10nPath)).To(BeTrue(),
 			fmt.Sprintf("l10n '%v' path does not exist", l10nPath),
