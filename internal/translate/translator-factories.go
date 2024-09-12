@@ -4,7 +4,7 @@ import (
 	"io/fs"
 
 	"github.com/snivilised/li18ngo/internal/ifs"
-	"github.com/snivilised/li18ngo/internal/lo"
+	"github.com/snivilised/li18ngo/internal/third/lo"
 	"github.com/snivilised/li18ngo/nfs"
 )
 

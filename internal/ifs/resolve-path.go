@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/snivilised/li18ngo/internal/lo"
+	"github.com/snivilised/li18ngo/internal/third/lo"
 )
 
 // AbsFunc signature of function used to obtain the absolute representation of

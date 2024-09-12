@@ -1,4 +1,3 @@
 github.com/snivilised/li18ngo/cmd/lingo
-github.com/snivilised/li18ngo/internal/lo
-github.com/snivilised/li18ngo/internal/third
+github.com/snivilised/li18ngo/internal/third/lo
 github.com/snivilised/li18ngo/tools

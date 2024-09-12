@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
-	"github.com/snivilised/li18ngo/internal/lo"
+	"github.com/snivilised/li18ngo/internal/third/lo"
 	"github.com/snivilised/li18ngo/nfs"
 	"golang.org/x/text/language"
 )
