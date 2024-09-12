@@ -1,7 +1,7 @@
 package translate
 
 import (
-	"github.com/snivilised/li18ngo/internal/lo"
+	"github.com/snivilised/li18ngo/internal/third/lo"
 	"golang.org/x/text/language"
 )
 

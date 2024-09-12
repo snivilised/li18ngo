@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/snivilised/li18ngo/internal/lo"
+	"github.com/snivilised/li18ngo/internal/third/lo"
 	"github.com/snivilised/li18ngo/tools/mio"
 	"github.com/snivilised/li18ngo/tools/sorter"
 )
