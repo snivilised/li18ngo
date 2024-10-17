@@ -8,19 +8,19 @@ import (
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/snivilised/li18ngo/internal/third/lo"
-	"github.com/snivilised/li18ngo/nfs"
+	nef "github.com/snivilised/nefilim"
 	"golang.org/x/text/language"
 )
 
 func createLocalizer(lang *LanguageInfo, sourceID string,
-	dirFS nfs.MkDirAllFS,
+	fS nef.MakeDirFS,
 ) (*i18n.Localizer, error) {
 	bundle := i18n.NewBundle(lang.Tag)
 	bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
 
 	if lang.Tag != lang.Default {
 		txSource := lang.From.Sources[sourceID]
-		path := resolveBundlePath(lang, txSource, dirFS)
+		path := resolveBundlePath(lang, txSource, fS)
 		_, err := bundle.LoadMessageFile(path)
 
 		if (err != nil) && (!lang.DefaultIsAcceptable) {
@@ -36,14 +36,14 @@ func createLocalizer(lang *LanguageInfo, sourceID string,
 }
 
 func resolveBundlePath(lang *LanguageInfo, txSource TranslationSource,
-	dirFS nfs.MkDirAllFS,
+	fS nef.MakeDirFS,
 ) string {
-	path := lo.Ternary(txSource.Path != "" && dirFS.DirectoryExists(txSource.Path),
+	path := lo.Ternary(txSource.Path != "" && fS.DirectoryExists(txSource.Path),
 		txSource.Path,
 		lang.From.Path,
 	)
 
-	directory := lo.TernaryF(path != "" && dirFS.DirectoryExists(path),
+	directory := lo.TernaryF(path != "" && fS.DirectoryExists(path),
 		func() string {
 			resolved, _ := filepath.Abs(path)
 			return resolved

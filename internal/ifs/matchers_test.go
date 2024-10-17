@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/onsi/gomega/types"
-	"github.com/snivilised/li18ngo/nfs"
+	nef "github.com/snivilised/nefilim"
 )
 
 type PathExistsMatcher struct {
@@ -21,7 +21,7 @@ func ExistInFS(fs interface{}) types.GomegaMatcher {
 }
 
 func (m *PathExistsMatcher) Match(actual interface{}) (bool, error) {
-	vfs, fileSystemOK := m.vfs.(nfs.ExistsInFS)
+	vfs, fileSystemOK := m.vfs.(nef.ExistsInFS)
 	if !fileSystemOK {
 		return false, fmt.Errorf("❌ matcher expected a ExistsInFS instance (%T)", vfs)
 	}

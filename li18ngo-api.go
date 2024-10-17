@@ -2,7 +2,7 @@ package li18ngo
 
 import (
 	"github.com/snivilised/li18ngo/internal/translate"
-	"github.com/snivilised/li18ngo/nfs"
+	nef "github.com/snivilised/nefilim"
 )
 
 var (
@@ -48,10 +48,10 @@ type (
 
 	// ExistsInFS provides the facility to check the existence
 	// of a path in the underlying file system.
-	ExistsInFS = nfs.ExistsInFS
+	ExistsInFS = nef.ExistsInFS
 
-	// MkDirAllFS is a file system with a MkDirAll method.
-	MkDirAllFS = nfs.MkDirAllFS
+	// MakeDirFS is a file system with a MkDirAll method.
+	MakeDirFS = nef.MakeDirFS
 
 	// 🌐 translate
 

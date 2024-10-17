@@ -4,7 +4,7 @@ import (
 	"io/fs"
 	"os"
 
-	"github.com/snivilised/li18ngo/nfs"
+	nef "github.com/snivilised/nefilim"
 )
 
 // NewStatFS creates a new fs.StatFS from a path
@@ -41,9 +41,9 @@ type queryStatusFS struct {
 }
 
 // StatFSFromFS creates a file system upon which Stat can be invoked
-func StatFSFromFS(fsys fs.FS) fs.StatFS {
+func StatFSFromFS(fS fs.FS) fs.StatFS {
 	return &queryStatusFS{
-		fsys: fsys,
+		fsys: fS,
 	}
 }
 
@@ -63,16 +63,16 @@ type nativeDirFS struct {
 }
 
 // NewNativeDirFS creates an instance of MkDirAllFS from a path
-func NewNativeDirFS(path string) nfs.MkDirAllFS {
+func NewNativeDirFS(path string) nef.MakeDirFS {
 	return &nativeDirFS{
 		statFS: StatFSFromFS(NewReadDirFS(path)),
 	}
 }
 
 // DirFSFromFS creates a native instance of MkDirAllFS from a fs.FS
-func DirFSFromFS(fsys fs.FS) nfs.MkDirAllFS {
+func DirFSFromFS(fS fs.FS) nef.MakeDirFS {
 	return &nativeDirFS{
-		statFS: StatFSFromFS(fsys),
+		statFS: StatFSFromFS(fS),
 	}
 }
 
@@ -107,6 +107,10 @@ func (f *nativeDirFS) DirectoryExists(path string) bool {
 // MkdirAll creates a directory named path,
 // along with any necessary parents, and returns nil,
 // or else returns an error.
-func (f *nativeDirFS) MkDirAll(path string, perm os.FileMode) error {
+func (f *nativeDirFS) MakeDir(path string, perm os.FileMode) error {
+	return os.Mkdir(path, perm)
+}
+
+func (f *nativeDirFS) MakeDirAll(path string, perm os.FileMode) error {
 	return os.MkdirAll(path, perm)
 }
