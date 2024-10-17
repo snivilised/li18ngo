@@ -5,7 +5,7 @@ import (
 
 	"github.com/snivilised/li18ngo/internal/ifs"
 	"github.com/snivilised/li18ngo/internal/third/lo"
-	"github.com/snivilised/li18ngo/nfs"
+	nef "github.com/snivilised/nefilim"
 )
 
 type translatorFactory struct {
@@ -48,10 +48,10 @@ func (f *multiTranslatorFactory) New(lang *LanguageInfo) (Translator, error) {
 	)
 
 	dirFS := lo.TernaryF(lang.FS != nil,
-		func() nfs.MkDirAllFS {
+		func() nef.MakeDirFS {
 			return ifs.DirFSFromFS(lang.FS)
 		},
-		func() nfs.MkDirAllFS {
+		func() nef.MakeDirFS {
 			return ifs.DirFSFromFS(queryFS)
 		},
 	)
@@ -59,7 +59,7 @@ func (f *multiTranslatorFactory) New(lang *LanguageInfo) (Translator, error) {
 	multi := &multiContainer{
 		localizers: make(localizerContainer),
 		queryFS:    queryFS,
-		dirFS:      dirFS,
+		fS:         dirFS,
 		create:     f.Create,
 	}
 

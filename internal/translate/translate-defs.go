@@ -5,7 +5,7 @@ import (
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/pkg/errors"
-	"github.com/snivilised/li18ngo/nfs"
+	nef "github.com/snivilised/nefilim"
 	"golang.org/x/text/language"
 )
 
@@ -67,7 +67,7 @@ type (
 	// LocalizerCreatorFn represents the signature of the function that can
 	// optionally be provided to override how an i18n Localizer is created.
 	LocalizerCreatorFn func(li *LanguageInfo, sourceID string,
-		dirFS nfs.MkDirAllFS,
+		fS nef.MakeDirFS,
 	) (*i18n.Localizer, error)
 
 	// UseOptionFn functional options function required by Use.

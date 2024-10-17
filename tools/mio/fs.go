@@ -3,7 +3,7 @@ package mio
 import "os"
 
 const (
-	perm = 0o644
+	perm = 0o666
 )
 
 var _ Transport = (*NativeReaderWriterFS)(nil)

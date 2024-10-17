@@ -4,7 +4,7 @@ import (
 	"io/fs"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
-	"github.com/snivilised/li18ngo/nfs"
+	nef "github.com/snivilised/nefilim"
 )
 
 type multiplexor struct {
@@ -21,7 +21,7 @@ type multiContainer struct {
 	multiplexor
 	localizers localizerContainer
 	queryFS    fs.StatFS
-	dirFS      nfs.MkDirAllFS
+	fS         nef.MakeDirFS
 	create     LocalizerCreatorFn
 }
 
@@ -73,5 +73,5 @@ func (mc *multiContainer) mitigate(id string) (*i18n.Localizer, error) {
 		Supported: SupportedLanguages{
 			DefaultLanguage,
 		},
-	}, id, mc.dirFS)
+	}, id, mc.fS)
 }
