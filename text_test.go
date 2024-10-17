@@ -87,14 +87,14 @@ var _ = Describe("Text", Ordered, func() {
 		Context("Text", func() {
 			Context("given: a template data instance", func() {
 				It("🧪 should: evaluate translated text(internationalization)", func() {
-					text := li18ngo.Text(li18ngo.InternationalisationTemplData{})
+					text := li18ngo.Text(InternationalisationTemplData{})
 					Expect(text).To(
 						Equal("internationalization"),
 					)
 				})
 
 				It("🧪 should: evaluate translated text(localization)", func() {
-					Expect(li18ngo.Text(li18ngo.LocalisationTemplData{})).To(
+					Expect(li18ngo.Text(LocalisationTemplData{})).To(
 						Equal("localization"),
 					)
 				})
@@ -117,7 +117,7 @@ var _ = Describe("Text", Ordered, func() {
 				}); err != nil {
 					Fail(err.Error())
 				}
-				actual := li18ngo.Text(li18ngo.PavementGraffitiReportTemplData{
+				actual := li18ngo.Text(PavementGraffitiReportTemplData{
 					Primary: "Violet",
 				})
 				Expect(actual).To(Equal(expectUS))
@@ -140,7 +140,7 @@ var _ = Describe("Text", Ordered, func() {
 					Fail(err.Error())
 				}
 
-				actual := li18ngo.Text(li18ngo.InternationalisationTemplData{})
+				actual := li18ngo.Text(InternationalisationTemplData{})
 				Expect(actual).To(Equal("internationalisation"))
 			})
 		})

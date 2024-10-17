@@ -50,7 +50,7 @@ func testTranslationPath(entry *textTE) string {
 		Fail(err.Error())
 	}
 
-	return li18ngo.Text(li18ngo.PavementGraffitiReportTemplData{
+	return li18ngo.Text(PavementGraffitiReportTemplData{
 		Primary: "Violet",
 	})
 }
