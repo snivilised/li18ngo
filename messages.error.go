@@ -102,7 +102,7 @@ type PathNotFoundTemplData struct {
 func (td PathNotFoundTemplData) Message() *i18n.Message {
 	return &i18n.Message{
 		ID:          "path-not-found.error",
-		Description: "Directory or file path is does not exist",
+		Description: "Directory or file path does not exist",
 		Other:       "{{.Name}} path not found ({{.Path}})",
 	}
 }
