@@ -1,0 +1,199 @@
+{
+  "Single i18n Word": {
+    "description": [
+      "Single i18n word (by convention, define in locale package)",
+      "$1: name of word",
+      "$2: name of repo"
+    ],
+    "body": [
+      "// 🍉 $1 (single word)",
+			"//",
+      "type $1TemplData struct {",
+      "\t${2:repoName}TemplData",
+      "}",
+      "",
+      "// Message",
+      "func (td $1TemplData) Message() *i18n.Message {",
+      "\treturn &i18n.Message{",
+      "\t\tID:          \"${1/(.*)/${1:/downcase}/}.word\",",
+      "\t\tDescription: \"$1\",",
+      "\t\tOther:       \"${1/(.*)/${1:/downcase}/}\",",
+      "\t}",
+      "}"
+    ],
+    "scope": "go",
+    "prefix": "w18"
+  },
+
+  "i18n Phrase": {
+    "description": [
+      "i18n phrase (by convention, define in locale package)",
+      "$1: name of phrase",
+      "$2: name of repo"
+    ],
+    "body": [
+      "// 🍑 $1 (phrase)",
+			"//",
+      "type $1TemplData struct {",
+      "\t${2:repoName}TemplData",
+      "}",
+      "",
+      "// Message",
+      "func (td $1TemplData) Message() *i18n.Message {",
+      "\treturn &i18n.Message{",
+      "\t\tID:          \"${1/(.*)/${1:/downcase}/}.phrase\",",
+      "\t\tDescription: \"$1\",",
+      "\t\tOther:       \"${1/(.*)/${1:/downcase}/}\",",
+      "\t}",
+      "}"
+    ],
+    "scope": "go",
+    "prefix": "p18"
+  },
+
+  "i18n Key/Value Field": {
+    "description": [
+      "i18n field (by convention, define in locale package)",
+      "$1: name of field",
+      "$2: name of repo",
+      "$3: key portion of the field"
+    ],
+    "body": [
+      "// 🥝 $1 (field)",
+			"//",
+      "type $1TemplData struct {",
+      "\t${2:repo}TemplData",
+      "\t${3:Key} string",
+      "}",
+      "",
+      "// Message",
+      "func (td $1TemplData) Message() *i18n.Message {",
+      "\treturn &i18n.Message{",
+      "\t\tID:          \"${1/(.*)/${1:/downcase}/}.field\",",
+      "\t\tDescription: \"${1/(.*)/${1:/downcase}/} ---\",",
+      "\t\tOther:       \"$3: {{.$3}}\",",
+      "\t}",
+      "}"
+    ],
+    "scope": "go",
+    "prefix": "f18"
+  },
+
+  "static i18n error": {
+    "description": [
+      "static i18n error (by convention, define in locale package)",
+      "$1: name of error",
+      "$2: name of repo"
+    ],
+    "body": [
+      "// 🍓 $1 (static i18n error)",
+			"//",
+      "type $1TemplData struct {",
+      "\t${2:repo}TemplData",
+      "}",
+      "",
+      "func (td $1TemplData) Message() *i18n.Message {",
+      "\treturn &i18n.Message{",
+      "\t\tID:          \"${1/([A-Z])/-${1:/downcase}/g}.static-error\",",
+      "\t\tDescription: \"---\",",
+      "\t\tOther:       \"${1/([A-Z])/ ${1:/downcase}/g}\",",
+      "\t}",
+      "}",
+      "",
+      "type $1Error struct {",
+      "\tli18ngo.LocalisableError",
+      "}"
+    ],
+    "scope": "go",
+    "prefix": "e18s"
+  },
+
+  "dynamic i18n error": {
+    "description": [
+      "dynamic i18n error (by convention, define in locale package)",
+      "$1: name of error",
+      "$2: name of repo"
+    ],
+    "body": [
+      "// 🥥 $1 (dynamic i18n error)",
+			"//",
+      "type $1TemplData struct {",
+      "\t${2:helios}TemplData",
+      "\tField string",
+      "}",
+      "",
+      "func (td $1TemplData) Message() *i18n.Message {",
+      "\treturn &i18n.Message{",
+      "\t\tID:          \"${1/([A-Z])/-${1:/downcase}/g}.dynamic-error\",",
+      "\t\tDescription: \"${1/([A-Z])/ ${1:/downcase}/g} dynamic error\",",
+      "\t\tOther:       \"field: {{.Field}}\",",
+      "\t}",
+      "}",
+      "",
+      "type $1Error struct {",
+      "\tli18ngo.LocalisableError",
+      "\tWrapped error",
+      "}",
+      "",
+      "func (e $1Error) Error() string {",
+      "\treturn fmt.Sprintf(\"%v, %v\", e.Wrapped.Error(), li18ngo.Text(e.Data))",
+      "}",
+      "",
+      "func (e $1Error) Unwrap() error {",
+      "\treturn e.Wrapped",
+      "}",
+      "",
+      "func New$1Error(field string) error {",
+      "\treturn &$1Error{",
+      "\t\tLocalisableError: li18ngo.LocalisableError{",
+      "\t\t\tData: $1TemplData{",
+      "\t\t\t\tField: field,",
+      "\t\t\t},",
+      "\t\t},",
+      "\t\tWrapped: errCore$1,",
+      "\t}",
+      "}"
+    ],
+    "scope": "go",
+    "prefix": "d18e"
+  },
+
+  "core i18n error": {
+    "description": [
+      "core i18n error (by convention, define in locale package)",
+      "$1: name of error",
+      "$2: name of repo"
+    ],
+    "body": [
+      "// 🥥 $1 (core i18n error)",
+			"//",
+      "type $1ErrorTemplData struct {",
+      "\t${2:repo}TemplData",
+      "}",
+      "",
+      "func Is$1Error(err error) bool {",
+      "\treturn errors.Is(err, err$1)",
+      "}",
+      "",
+      "func (td $1ErrorTemplData) Message() *i18n.Message {",
+      "\treturn &i18n.Message{",
+      "\t\tID:          \"${1/([A-Z])/-${1:/downcase}/g}.core-error\",",
+      "\t\tDescription: \"core error\",",
+      "\t\tOther:       \"---",
+      "\t}",
+      "}",
+      "",
+      "type $1Error struct {",
+      "\tli18ngo.LocalisableError",
+      "}",
+      "",
+      "var err$1 = $1Error{",
+      "\tLocalisableError: li18ngo.LocalisableError{",
+      "\t\tData: $1ErrorTemplData{},",
+      "\t},",
+      "}"
+    ],
+    "scope": "go",
+    "prefix": "c18e"
+  }
+}

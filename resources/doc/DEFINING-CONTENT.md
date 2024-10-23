@@ -28,7 +28,7 @@ The categories covered are:
 * core error (wrapped error)
 * dynamic error (error wrapper)
 
-For each description of a message, there will be a definition of a data template of the form ___xxxTemplData___, eg 'InternationaliseTemplData', and this struct will embed an a fictional type 'heliosTemplData', which in reality would be replaced by a project specific type. So for example, the 'traverse' project will use type ___traverseTemplData___. The purpose of this embedded data template type is simply to define the ___SourceID___ required to work with li18ngo (if using either of the 2 __snivilised__, template projects, __arcadia__ or __astrolib__, this type will automatically be defined). For each message definition, there will be an example and then a generalised form, which the reader can copy and paste to create custom definitions. They can also be used to defined code snippets as an alternative way of speeding up implementation of new messages.
+For each description of a message, there will be a definition of a data template of the form ___xxxTemplData___, eg 'InternationaliseTemplData', and this struct will embed an a fictional type 'heliosTemplData', which in reality would be replaced by a project specific type. So for example, the 'traverse' project will use type ___traverseTemplData___. The purpose of this embedded data template type is simply to define the ___SourceID___ required to work with li18ngo (if using either of the 2 __snivilised__, template projects, __arcadia__ or __astrolib__, this type will automatically be defined). For each message definition, there will be an example and then a generalised form, which the reader can copy and paste to create custom definitions. They can also be used to defined code snippets as an alternative way of speeding up implementation of new messages (see [go i18n snippets](./.vscode/snippets/go.my-i18n.json); they can be activated by copying them over to your vscode global snippets file. Adjust them according to your own needs).
 
 ## Non Error Content
 
@@ -68,6 +68,13 @@ For each description of a message, there will be a definition of a data template
   }
 ```
 
+* 🍉 snippet prefix: "w18", ___Single i18n Word___
+
+| variable | description |
+|----------|-------------|
+| $1 | word |
+| $2 | repo name |
+
 ### 📬 Phrase
 
 * 📨 Message ID: "xxx.phrase"
@@ -106,6 +113,15 @@ Essentially, this is no different to a `word`, except that the ID contains a dif
   }
 ```
 
+* 🍑 snippet prefix: "w18", ___i18n Phrase___
+
+| variable | description |
+|----------|-------------|
+| $1 | phrase |
+| $2 | repo name |
+
+📍 __Note__ : spaces and dashes will need to be inserted into the `ID`, `Description` and `Other` fields.
+
 ### 📬 Key Value Field
 
 * 📨 Message ID: "xxx.field"
@@ -139,7 +155,7 @@ Just to clarify, the key/value pair being addressed here is the case where the f
 ```go
   type FooTemplData struct {
     heliosTemplData
-    FieldName string
+    Key string
   }
 
   // Message
@@ -147,10 +163,24 @@ Just to clarify, the key/value pair being addressed here is the case where the f
     return &i18n.Message{
       ID:          "---.field",
       Description: "---",
-      Other:       "Name: {{.FieldName}}",
+      Other:       "Name: {{.Key}}",
     }
   }
 ```
+
+* 🥝 snippet prefix: "f18", ___i18n Field___
+
+| variable | description |
+|----------|-------------|
+| $1 | name of the key/value field |
+| $2 | repo name |
+| $3 | key |
+
+`key` is assumed to be of type string, adjust this type as appropriate.
+
+📍 __Note__ : spaces and dashes will need to be inserted into the `ID`, `Description` and `Other` fields.
+
+📍 __Note__ : $3/Key is a pseudo field because VSCode will not prompt for content for this parameter due to the way that snippets are implemented. After the snippet has been inserted, the key will remain as 'Key string' and will require updating as appropriate, including inside the template reference within `Other`.
 
 ## Error Content
 
@@ -218,6 +248,13 @@ type OutOfMemoryError struct {
     li18ngo.LocalisableError
   }
 ```
+
+* 🍓 snippet prefix: "e18s", ___static i18n error___
+
+| variable | description |
+|----------|-------------|
+| $1 | name of the error |
+| $2 | repo name |
 
 * 🎁 Create:
 
@@ -303,7 +340,7 @@ This message optionally contains a static part with un-translate-able dynamic co
 
 So the effect of this is that the core error is the fundamental error required for identification purposes and the wrapper with the dynamic part adds context to this fundamental.
 
-Note also that we now need to define an alternative implementation of the ___Error___ method, which combines the static part with the dynamic. The ___Unwrap___ method defined is invoked for us whenever the client invokes ___errors.Is___, which will be done via the ___IsPathNotFoundError___ defined for the core.
+📍 __Note__ also that we now need to define an alternative implementation of the ___Error___ method, which combines the static part with the dynamic. The ___Unwrap___ method defined is invoked for us whenever the client invokes ___errors.Is___, which will be done via the ___IsPathNotFoundError___ defined for the core.
 
 * ⭕ Generalised form:
 
@@ -345,6 +382,16 @@ Note also that we now need to define an alternative implementation of the ___Err
     }
   }
 ```
+
+* 🍒 snippet prefix: "e18d", ___dynamic i18n error___
+
+| variable | description |
+|----------|-------------|
+| $1 | name of the error |
+| $2 | repo name |
+| $3 | context field |
+
+📍 __Note__ The snippet will generate code to access the core error. This core error reference will probably be wrong, unless the core error has been pre-defined correctly first. It is recommended to use the core error snippet first then this one next.
 
 * 🎁 Create:
 
@@ -432,3 +479,10 @@ The core error is not meant to be used in isolation, it's purpose is simply to b
     },
   }
 ```
+
+* 🥥 snippet prefix: "e18c", ___core i18n error___
+
+| variable | description |
+|----------|-------------|
+| $1 | name of the core error |
+| $2 | repo name |
