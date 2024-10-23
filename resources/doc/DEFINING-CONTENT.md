@@ -72,6 +72,8 @@ For each description of a message, there will be a definition of a data template
 
 * 📨 Message ID: "xxx.phrase"
 
+Essentially, this is no different to a `word`, except that the ID contains a different suffix.
+
 ```go
   type IHaveACunningPlanTemplData struct {
     heliosTemplData
@@ -108,7 +110,7 @@ For each description of a message, there will be a definition of a data template
 
 * 📨 Message ID: "xxx.field"
 
-Just to clarify, the key/value pair being addressed here is the case where the field is constant content and the value dynamically created at runtime and thus not subject to translation, eg
+Just to clarify, the key/value pair being addressed here is the case where the field is constant content and the value is dynamically created at runtime and thus not subject to translation, eg:
 
 > name: marina
 
@@ -169,7 +171,7 @@ ___li18ngo.LocalisableError___ is the struct that can be embedded into a custom 
 
 * 📨 Message ID: "xxx.static"
 
-This is a static error message, that has no dynamic content. The data template will not contain any extra members and the ___Other___ field will be a straight forward string containing no break out references to template fields (eg {{.Foo}}).
+This is a static error message, that has no dynamic content. The data template will not contain any extra members and the ___Other___ field will be a straight forward string containing no break out references to template fields (eg {{.Foo}}). This is similar to a `phrase`, except we have to add in the error plumbing.
 
 The following describes an 'out of memory' error:
 
@@ -202,15 +204,13 @@ type OutOfMemoryError struct {
 ```go
   type FooTemplData struct {
     heliosTemplData
-    Name string
-    Path string
   }
 
   func (td FooTemplData) Message() *i18n.Message {
     return &i18n.Message{
-      ID:          "out-of-memory.error",
-      Description: "System has unable to allocate new memory",
-      Other:       "out of memory",
+      ID:          "foo.error",
+      Description: "---",
+      Other:       "---",
     }
   }
 
@@ -264,15 +264,15 @@ This message optionally contains a static part with un-translate-able dynamic co
 
 ```go
   type PathNotFoundTemplData struct {
-    locale.heliosTemplData
+    heliosTemplData
     Path string
   }
 
   func (td PathNotFoundTemplData) Message() *i18n.Message {
     return &i18n.Message{
       ID:          "path-not-found.dynamic-error",
-      Description: "Directory or file path does not exist",
-      Other:       "path not found ({{.Path}})",
+      Description: "path not found dynamic error",
+      Other:       "path: {{.Path}}",
     }
   }
 
@@ -291,12 +291,12 @@ This message optionally contains a static part with un-translate-able dynamic co
 
   func NewPathNotFoundError(path string) error {
     return &PathNotFoundError{
-      LocalisableError: translate.LocalisableError{
+      LocalisableError: li18ngo.LocalisableError{
         Data: PathNotFoundTemplData{
           Path: path,
         },
       },
-      Wrapped: errCorePathNotFound
+      Wrapped: errCorePathNotFound,
     }
   }
 ```
@@ -309,15 +309,15 @@ Note also that we now need to define an alternative implementation of the ___Err
 
 ```go
   type FooTemplData struct {
-    locale.heliosTemplData
+    heliosTemplData
     Field string
   }
 
   func (td FooTemplData) Message() *i18n.Message {
     return &i18n.Message{
       ID:          "---.dynamic-error",
-      Description: "---",
-      Other:       "--- ({{.Field}})",
+      Description: "--- dynamic error",
+      Other:       "field: {{.Field}}",
     }
   }
 
@@ -330,18 +330,18 @@ Note also that we now need to define an alternative implementation of the ___Err
     return fmt.Sprintf("%v, %v", e.Wrapped.Error(), li18ngo.Text(e.Data))
   }
 
-  func (e *FooError) Unwrap() error {
+  func (e FooError) Unwrap() error {
     return e.Wrapped
   }
 
-  func NewFooError(path string) error {
+  func NewFooError(field string) error {
     return &FooError{
-      LocalisableError: translate.LocalisableError{
+      LocalisableError: li18ngo.LocalisableError{
         Data: FooTemplData{
-          Path: path,
+          Field: field,
         },
       },
-      Wrapped: errCoreFoo
+      Wrapped: errCoreFoo,
     }
   }
 ```
@@ -350,7 +350,7 @@ Note also that we now need to define an alternative implementation of the ___Err
 
 ```go
   path := "/system/app/configs/foo"
-  NewPathNotFoundError(path)
+  NewPathNotFoundError(pattern)
 ```
 
 * 🎯 Identify:
@@ -358,6 +358,12 @@ Note also that we now need to define an alternative implementation of the ___Err
 ```go
   func IsPathNotFoundError(err error) bool {
     return errors.Is(err, errCorePathNotFound)
+  }
+
+  ...
+
+  if err := operation(); err != nil && IsPathNotFoundError(err) {
+    // some remedial action
   }
 ```
 
@@ -381,7 +387,7 @@ The core error is not meant to be used in isolation, it's purpose is simply to b
   func (td CorePathNotFoundErrorTemplData) Message() *i18n.Message {
     return &i18n.Message{
       ID:          "path-not-found.core-error",
-      Description: "path not found error",
+      Description: "path not found core error",
       Other:       "path not found",
     }
   }
@@ -400,29 +406,29 @@ The core error is not meant to be used in isolation, it's purpose is simply to b
 * ⭕ Generalised form:
 
 ```go
-  type CoreFooTemplData struct {
+  type CoreFooErrorTemplData struct {
     heliosTemplData
   }
 
-  func IsFoo(err error) bool {
-    return errors.Is(err, errFoo)
+  func IsFooError(err error) bool {
+    return errors.Is(err, errCoreFoo)
   }
 
-  func (td CoreFooTemplData) Message() *i18n.Message {
+  func (td CoreFooErrorTemplData) Message() *i18n.Message {
     return &i18n.Message{
       ID:          "---.core-error",
-      Description: "---",
+      Description: "--- core error",
       Other:       "---",
     }
   }
 
-  type CoreFoo struct {
+  type CoreFooError struct {
     li18ngo.LocalisableError
   }
 
-  var errFoo = CoreFoo{
+  var errCoreFoo = CoreFooError{
     LocalisableError: li18ngo.LocalisableError{
-      Data: CoreFooTemplData{},
+      Data: CoreFooErrorTemplData{},
     },
   }
 ```
