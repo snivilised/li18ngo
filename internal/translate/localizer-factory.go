@@ -13,7 +13,7 @@ import (
 )
 
 func createLocalizer(lang *LanguageInfo, sourceID string,
-	fS nef.MakeDirFS,
+	fS nef.ReaderFS,
 ) (*i18n.Localizer, error) {
 	bundle := i18n.NewBundle(lang.Tag)
 	bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
@@ -35,8 +35,9 @@ func createLocalizer(lang *LanguageInfo, sourceID string,
 	return i18n.NewLocalizer(bundle, supported...), nil
 }
 
+// returns an absolute reference to the bundle file
 func resolveBundlePath(lang *LanguageInfo, txSource TranslationSource,
-	fS nef.MakeDirFS,
+	fS nef.ReaderFS,
 ) string {
 	path := lo.Ternary(txSource.Path != "" && fS.DirectoryExists(txSource.Path),
 		txSource.Path,

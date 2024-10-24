@@ -15,9 +15,9 @@ var (
 	// has accidentally not called Use before working with li18ngo.
 	ErrSafePanicWarning = translate.ErrSafePanicWarning
 
-	// Li18ngoSourceID the id that represents this module. If client want
+	// Li18ngoSourceID the id that represents this module. If a client want
 	// to provides translations for languages that li18ngo does not, then
-	// the localizer the create created for this purpose should use this
+	// the localizer the 'create' created for this purpose should use this
 	// SourceID. So whenever the Text function is used on templates defined
 	// inside this module, the translation process is directed to use the
 	// correct i18n.Localizer (identified by the SourceID). The Source is

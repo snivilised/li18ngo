@@ -1,8 +1,6 @@
 package translate
 
 import (
-	"io/fs"
-
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	nef "github.com/snivilised/nefilim"
 )
@@ -20,8 +18,8 @@ func (mx *multiplexor) invoke(localizer *i18n.Localizer, data Localisable) (stri
 type multiContainer struct {
 	multiplexor
 	localizers localizerContainer
-	queryFS    fs.StatFS
-	fS         nef.MakeDirFS
+	queryFS    nef.ReaderFS
+	fS         nef.ReaderFS
 	create     LocalizerCreatorFn
 }
 

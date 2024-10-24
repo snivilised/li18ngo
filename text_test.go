@@ -8,11 +8,15 @@ import (
 	. "github.com/onsi/ginkgo/v2" //nolint:revive // ginkgo ok
 	. "github.com/onsi/gomega"    //nolint:revive // gomega ok
 	"github.com/snivilised/li18ngo"
-	"github.com/snivilised/li18ngo/internal/ifs"
 	"github.com/snivilised/li18ngo/internal/lab"
 	"github.com/snivilised/li18ngo/internal/translate"
 	"github.com/snivilised/li18ngo/locale"
+	nef "github.com/snivilised/nefilim"
 	"golang.org/x/text/language"
+)
+
+const (
+	relative = "test/data/l10n"
 )
 
 var _ = Describe("Text", Ordered, func() {
@@ -24,14 +28,19 @@ var _ = Describe("Text", Ordered, func() {
 
 	BeforeAll(func() {
 		repo = lab.Repo("")
-		l10nPath = lab.Path(repo, "test/data/l10n")
-		queryFS := ifs.NewNativeDirFS(l10nPath)
-		Expect(queryFS.DirectoryExists(l10nPath)).To(BeTrue(),
-			fmt.Sprintf("l10n '%v' path does not exist", l10nPath),
+		l10nPath = lab.Path(repo, relative)
+		queryFS := nef.NewMakeDirFS(nef.Rel{
+			Root: repo,
+		})
+
+		Expect(queryFS.DirectoryExists(relative)).To(BeTrue(),
+			fmt.Sprintf("l10n '%v' path does not exist", relative),
 		)
 
 		testTranslationFile = li18ngo.TranslationFiles{
-			li18ngo.Li18ngoSourceID: li18ngo.TranslationSource{Name: "test"},
+			li18ngo.Li18ngoSourceID: li18ngo.TranslationSource{
+				Name: "test",
+			},
 		}
 	})
 
@@ -79,6 +88,7 @@ var _ = Describe("Text", Ordered, func() {
 				o.Tag = language.AmericanEnglish
 				o.From.Path = l10nPath
 				o.From.Sources = testTranslationFile
+				o.DefaultIsAcceptable = false
 			}); err != nil {
 				Fail(err.Error())
 			}
@@ -114,6 +124,7 @@ var _ = Describe("Text", Ordered, func() {
 							locale.TestGrafficoSourceID: li18ngo.TranslationSource{Name: "test.graffico"},
 						},
 					}
+					o.DefaultIsAcceptable = false
 				}); err != nil {
 					Fail(err.Error())
 				}
