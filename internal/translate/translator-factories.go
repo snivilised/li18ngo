@@ -1,10 +1,6 @@
 package translate
 
 import (
-	"io/fs"
-
-	"github.com/snivilised/li18ngo/internal/ifs"
-	"github.com/snivilised/li18ngo/internal/third/lo"
 	nef "github.com/snivilised/nefilim"
 )
 
@@ -37,28 +33,15 @@ type multiTranslatorFactory struct {
 func (f *multiTranslatorFactory) New(lang *LanguageInfo) (Translator, error) {
 	f.setup(lang)
 
-	queryFS := lo.TernaryF(lang.FS != nil,
-		func() fs.StatFS {
-			return lang.FS
-		},
-		func() fs.StatFS {
-			native := ifs.NewReadDirFS(lang.From.Path)
-			return ifs.StatFSFromFS(native)
-		},
-	)
+	dirFS := lang.FS
 
-	dirFS := lo.TernaryF(lang.FS != nil,
-		func() nef.MakeDirFS {
-			return ifs.DirFSFromFS(lang.FS)
-		},
-		func() nef.MakeDirFS {
-			return ifs.DirFSFromFS(queryFS)
-		},
-	)
+	if dirFS == nil {
+		dirFS = nef.NewReaderABS()
+	}
 
 	multi := &multiContainer{
 		localizers: make(localizerContainer),
-		queryFS:    queryFS,
+		queryFS:    dirFS,
 		fS:         dirFS,
 		create:     f.Create,
 	}

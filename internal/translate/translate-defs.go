@@ -1,8 +1,6 @@
 package translate
 
 import (
-	"io/fs"
-
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/pkg/errors"
 	nef "github.com/snivilised/nefilim"
@@ -67,7 +65,7 @@ type (
 	// LocalizerCreatorFn represents the signature of the function that can
 	// optionally be provided to override how an i18n Localizer is created.
 	LocalizerCreatorFn func(li *LanguageInfo, sourceID string,
-		fS nef.MakeDirFS,
+		fS nef.ReaderFS,
 	) (*i18n.Localizer, error)
 
 	// UseOptionFn functional options function required by Use.
@@ -102,7 +100,7 @@ type (
 		// FS is a file system from where translations are loaded from. This
 		// does not have to performed explicitly asa it will be created using
 		// the From field if not specified.
-		FS fs.StatFS
+		FS nef.ReaderFS
 	}
 
 	// LanguageInfo information pertaining to setting language. Auto detection
