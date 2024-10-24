@@ -135,12 +135,6 @@ func NewPathNotFoundError(name, path string) PathNotFoundError {
 	}
 }
 
-// QueryPathNotFoundError helper function to enable identification of
-// an error via its behaviour, rather than by its type.
-func QueryPathNotFoundError(target error) bool {
-	return translate.QueryGeneric[PathNotFoundErrorBehaviourQuery]("IsPathNotFound", target)
-}
-
 // ❌ Not A Directory
 
 // NotADirectoryTemplData path is not a directory
@@ -182,12 +176,6 @@ func NewNotADirectoryError(path string) NotADirectoryError {
 			},
 		},
 	}
-}
-
-// QueryNotADirectoryError helper function to enable identification of
-// an error via its behaviour, rather than by its type.
-func QueryNotADirectoryError(target error) bool {
-	return translate.QueryGeneric[NotADirectoryErrorBehaviourQuery]("NotADirectory", target)
 }
 
 // ❌ Third Party Error
