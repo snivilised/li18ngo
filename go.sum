@@ -29,10 +29,8 @@ github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZN
 github.com/rogpeppe/go-internal v1.9.0/go.mod h1:WtVeX8xhTBvf0smdhujwtBcq4Qrzq/fJaraNFVN+nFs=
 github.com/rogpeppe/go-internal v1.11.0 h1:cWPaGQEPrBb5/AsnsZesgZZ9yb1OQ+GOISoDNXVBh4M=
 github.com/rogpeppe/go-internal v1.11.0/go.mod h1:ddIwULY96R17DhadqLgMfk9H9tvdUzkipdSkR5nkCZA=
-github.com/snivilised/nefilim v0.1.7 h1:T7ekCkLCrDVcTCeodgomX/sehNIRsGNN+aiv/u5Yn+E=
-github.com/snivilised/nefilim v0.1.7/go.mod h1:+4/hKxgfvE8eNjLMJC+3ropEZSQuiR/NqfPtIuw7ZMw=
-github.com/snivilised/nefilim v0.1.8 h1:Srnl6rw7cB/cy3jQT8QfQ0ZNxumQX0Yj/Z+qH3+5TWc=
-github.com/snivilised/nefilim v0.1.8/go.mod h1:xcQnPeB+zVD+xgw9yzy0QiMTGqjYNEWKeoaZL0TBQeA=
+github.com/snivilised/nefilim v0.1.10 h1:j8EGMZSGgFIjcxaVOvYvn7/r66Q5ffXihmq52F55r/E=
+github.com/snivilised/nefilim v0.1.10/go.mod h1:xcQnPeB+zVD+xgw9yzy0QiMTGqjYNEWKeoaZL0TBQeA=
 github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c h1:7dEasQXItcW1xKJ2+gg5VOiBnqWrJc+rq0DPKyvvdbY=
