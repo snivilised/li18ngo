@@ -1,6 +1,6 @@
 module github.com/snivilised/li18ngo
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/nicksnyder/go-i18n/v2 v2.6.0
@@ -8,7 +8,7 @@ require (
 	github.com/onsi/gomega v1.37.0
 	github.com/pkg/errors v0.9.1
 	github.com/snivilised/nefilim v0.1.10
-	golang.org/x/text v0.24.0
+	golang.org/x/text v0.30.0
 )
 
 require (
@@ -20,8 +20,8 @@ require (
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c // indirect
-	golang.org/x/net v0.37.0 // indirect
-	golang.org/x/sys v0.32.0 // indirect
-	golang.org/x/tools v0.31.0 // indirect
+	golang.org/x/net v0.44.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/tools v0.37.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
