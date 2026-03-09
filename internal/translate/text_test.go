@@ -3,8 +3,8 @@ package translate_test
 import (
 	"errors"
 
-	. "github.com/onsi/ginkgo/v2" //nolint:revive // ginkgo ok
-	. "github.com/onsi/gomega"    //nolint:revive // ok
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	"github.com/snivilised/li18ngo"
 	"github.com/snivilised/li18ngo/locale"

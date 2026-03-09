@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
-	. "github.com/onsi/ginkgo/v2" //nolint:revive // ginkgo ok
-	. "github.com/onsi/gomega"    //nolint:revive // ginkgo ok
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 func TestTranslate(t *testing.T) {
