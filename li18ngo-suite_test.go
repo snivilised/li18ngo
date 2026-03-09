@@ -3,8 +3,8 @@ package li18ngo_test
 import (
 	"testing"
 
-	. "github.com/onsi/ginkgo/v2" //nolint:revive // ok
-	. "github.com/onsi/gomega"    //nolint:revive // ok
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	"github.com/snivilised/li18ngo"
 	"github.com/snivilised/li18ngo/internal/translate"
@@ -18,10 +18,8 @@ func TestLi18ngo(t *testing.T) {
 }
 
 type textTE struct {
-	message           string
 	path              string
 	sourcePath        string
-	name              string
 	defaultAcceptable bool
 }
 
