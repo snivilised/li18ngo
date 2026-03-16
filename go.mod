@@ -8,7 +8,7 @@ require (
 	github.com/onsi/gomega v1.39.1
 	github.com/pkg/errors v0.9.1
 	github.com/snivilised/nefilim v0.1.11
-	golang.org/x/text v0.34.0
+	golang.org/x/text v0.35.0
 )
 
 require (
