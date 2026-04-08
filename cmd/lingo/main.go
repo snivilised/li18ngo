@@ -714,31 +714,55 @@ func extractTemplateTokens(s string) []string {
 // Code generation
 // ---------------------------------------------------------------------------
 
+// outputFile pairs a generated file path with its source bytes.
+type outputFile struct {
+	path string
+	src  []byte
+}
+
 func generate(dir, pkgName, baseStruct string, entries []underlierEntry) error {
 	cobra, general, errs := splitEntries(entries)
 
-	cobraFile, err := generateCobra(pkgName, baseStruct, cobra)
-	if err != nil {
-		return fmt.Errorf("generating cobra file: %w", err)
-	}
-	generalFile, err := generateGeneral(pkgName, baseStruct, general)
-	if err != nil {
-		return fmt.Errorf("generating general file: %w", err)
-	}
-	errorsFile, err := generateErrors(pkgName, baseStruct, errs)
-	if err != nil {
-		return fmt.Errorf("generating errors file: %w", err)
+	var outputs []outputFile
+
+	if len(cobra) > 0 {
+		src, err := generateCobra(pkgName, baseStruct, cobra)
+		if err != nil {
+			return fmt.Errorf("generating cobra file: %w", err)
+		}
+		outputs = append(outputs, outputFile{
+			path: filepath.Join(dir, "messages-cobra-auto.go"),
+			src:  src,
+		})
 	}
 
-	for path, src := range map[string][]byte{
-		filepath.Join(dir, "messages-cobra-auto.go"):   cobraFile,
-		filepath.Join(dir, "messages-general-auto.go"): generalFile,
-		filepath.Join(dir, "messages-errors-auto.go"):  errorsFile,
-	} {
-		if err := os.WriteFile(path, src, 0o644); err != nil {
-			return fmt.Errorf("writing %s: %w", path, err)
+	if len(general) > 0 {
+		src, err := generateGeneral(pkgName, baseStruct, general)
+		if err != nil {
+			return fmt.Errorf("generating general file: %w", err)
 		}
-		fmt.Printf("lingo: wrote %s\n", path)
+		outputs = append(outputs, outputFile{
+			path: filepath.Join(dir, "messages-general-auto.go"),
+			src:  src,
+		})
+	}
+
+	if len(errs) > 0 {
+		src, err := generateErrors(pkgName, baseStruct, errs)
+		if err != nil {
+			return fmt.Errorf("generating errors file: %w", err)
+		}
+		outputs = append(outputs, outputFile{
+			path: filepath.Join(dir, "messages-errors-auto.go"),
+			src:  src,
+		})
+	}
+
+	for _, o := range outputs {
+		if err := os.WriteFile(o.path, o.src, 0o644); err != nil {
+			return fmt.Errorf("writing %s: %w", o.path, err)
+		}
+		fmt.Printf("lingo: wrote %s\n", o.path)
 	}
 	return nil
 }
@@ -1297,7 +1321,6 @@ func generateErrors(pkg, base string, entries []underlierEntry) ([]byte, error) 
 		}
 	}
 	imports := []string{
-		"errors",
 		"github.com/nicksnyder/go-i18n/v2/i18n",
 		"github.com/snivilised/li18ngo",
 	}
