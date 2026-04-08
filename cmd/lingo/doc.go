@@ -1,3 +1,2 @@
-// Package main provides the lingo command-line tool for sorting li18ngo
-// translation message files, supporting both plain and hashed message formats.
+// Package main implements the lingo i18n code generation command-line tool
 package main
