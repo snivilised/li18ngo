@@ -52,7 +52,7 @@ import (
 	"text/template"
 	"unicode"
 
-	"github.com/snivilised/li18ngo/cmd/lingo/enums"
+	"github.com/snivilised/li18ngo/locale/enums"
 )
 
 // ---------------------------------------------------------------------------
@@ -350,8 +350,37 @@ func findBaseStruct(file *ast.File) string {
 	return ""
 }
 
+// isUnderliersType reports whether an AST expression refers to the
+// Underliers type, handling both forms a client package may use:
+//
+//   - bare ident:      Underliers{...}         (local alias / dot-import)
+//   - selector expr:   li18ngo.Underliers{...}  (normal qualified import)
+//
+// Only the type-name "Underliers" is checked; the package qualifier is
+// accepted as-is so that clients are free to alias the import.
+func isUnderliersType(expr ast.Expr) bool {
+	switch t := expr.(type) {
+	case *ast.Ident:
+		return t.Name == "Underliers"
+	case *ast.SelectorExpr:
+		return t.Sel.Name == "Underliers"
+	}
+	return false
+}
+
 // extractUnderliers finds the var declaration of type Underliers and
 // extracts all map entries from its composite literal.
+//
+// It recognises three declaration styles:
+//
+//  1. Explicit bare type:
+//     var messages Underliers = Underliers{...}
+//
+//  2. Explicit qualified type:
+//     var messages li18ngo.Underliers = li18ngo.Underliers{...}
+//
+//  3. Inferred type (most common):
+//     var messages = li18ngo.Underliers{...}
 func extractUnderliers(file *ast.File) ([]underlierEntry, error) {
 	for _, decl := range file.Decls {
 		gen, ok := decl.(*ast.GenDecl)
@@ -363,22 +392,18 @@ func extractUnderliers(file *ast.File) ([]underlierEntry, error) {
 			if !ok {
 				continue
 			}
-			// Check type is Underliers.
-			if vs.Type != nil {
-				id, ok := vs.Type.(*ast.Ident)
-				if !ok || id.Name != "Underliers" {
-					continue
-				}
+			// Explicit type annotation: var messages Underliers = ...
+			// or var messages li18ngo.Underliers = ...
+			if vs.Type != nil && !isUnderliersType(vs.Type) {
+				continue
 			}
-			// Also accept inferred type — check the value is a composite
-			// literal whose type is Underliers.
+			// Inferred type — inspect the composite literal directly.
 			for _, val := range vs.Values {
 				cl, ok := val.(*ast.CompositeLit)
 				if !ok {
 					continue
 				}
-				typeIdent, ok := cl.Type.(*ast.Ident)
-				if !ok || typeIdent.Name != "Underliers" {
+				if !isUnderliersType(cl.Type) {
 					continue
 				}
 				return extractMapEntries(cl)
