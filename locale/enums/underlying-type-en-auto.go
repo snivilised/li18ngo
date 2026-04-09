@@ -16,13 +16,14 @@ func _() {
 	_ = x[UnderlyingTypeStaticError-5]
 	_ = x[UnderlyingTypeSentinelError-6]
 	_ = x[UnderlyingTypeStaticErrorWrapper-7]
-	_ = x[UnderlyingTypeDynamicError-8]
-	_ = x[UnderlyingTypeDynamicErrorWrapper-9]
+	_ = x[UnderlyingTypeStaticErrorWrapperMsg-8]
+	_ = x[UnderlyingTypeDynamicError-9]
+	_ = x[UnderlyingTypeDynamicErrorWrapper-10]
 }
 
-const _UnderlyingType_name = "UndefinedStaticCobraDynamicCobraStaticGeneralDynamicGeneralStaticErrorSentinelErrorStaticErrorWrapperDynamicErrorDynamicErrorWrapper"
+const _UnderlyingType_name = "UndefinedStaticCobraDynamicCobraStaticGeneralDynamicGeneralStaticErrorSentinelErrorStaticErrorWrapperStaticErrorWrapperMsgDynamicErrorDynamicErrorWrapper"
 
-var _UnderlyingType_index = [...]uint8{0, 9, 20, 32, 45, 59, 70, 83, 101, 113, 132}
+var _UnderlyingType_index = [...]uint8{0, 9, 20, 32, 45, 59, 70, 83, 101, 122, 134, 153}
 
 func (i UnderlyingType) String() string {
 	idx := int(i) - 0

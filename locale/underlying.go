@@ -163,13 +163,13 @@ var underliers = Underliers{
 		},
 	},
 
-	"third-party.error-wrapper": {
-		MessageID:   "third-party.error-wrapper",
+	"third-party.error-wrapper-msg": {
+		MessageID:   "third-party.error-wrapper-msg",
 		Seed:        "ThirdPartyErrorWrapper",
-		TypeName:    enums.UnderlyingTypeStaticErrorWrapper,
+		TypeName:    enums.UnderlyingTypeStaticErrorWrapperMsg,
 		Description: "Wrapper for third-party errors",
 		Story:       "ThirdPartyErrorWrapper is used to wrap errors from third-party libraries.",
-		Other:       "An error occurred in a third-party library: {{.Wrapped}}",
+		Other:       "Third party error occurred: '{{.Wrapped}}'",
 		Fields: []UnderlyingField{
 			{
 				Note:   "Wrapped",
@@ -182,7 +182,7 @@ var underliers = Underliers{
 
 func init() {
 	// Prevent the underliers variable from being flagged as unused by the
-	// Go compiler. i18n-gen reads this variable from the AST at generate
+	// Go compiler. lingo reads this variable from the AST at generate
 	// time; it is not referenced at runtime.
 	_ = underliers
 }

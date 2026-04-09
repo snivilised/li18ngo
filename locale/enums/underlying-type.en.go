@@ -108,9 +108,17 @@ const (
 	// wrapped by outer errors.
 	UnderlyingTypeSentinelError // SentinelError
 
-	// UnderlyingTypeStaticErrorWrapper is a static error that wraps
-	// another error.
+	// UnderlyingTypeStaticErrorWrapper is a static error that wraps another
+	// error. The message text is fixed — {{.Wrapped}} must not appear in
+	// Other. Use UnderlyingTypeStaticErrorWrapperMsg when you need the
+	// wrapped error's text to appear in the translated message.
 	UnderlyingTypeStaticErrorWrapper // StaticErrorWrapper
+
+	// UnderlyingTypeStaticErrorWrapperMsg is a static error that wraps
+	// another error and includes the wrapped error's message in the
+	// translated output via {{.Wrapped}}. Use this instead of
+	// UnderlyingTypeStaticErrorWrapper when Other contains {{.Wrapped}}.
+	UnderlyingTypeStaticErrorWrapperMsg // StaticErrorWrapperMsg
 
 	// UnderlyingTypeDynamicError is a dynamic error with no wrapping.
 	UnderlyingTypeDynamicError // DynamicError
