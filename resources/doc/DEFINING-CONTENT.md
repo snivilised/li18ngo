@@ -15,6 +15,8 @@
 <!-- MD028/no-blanks-blockquote: Blank line inside blockquote -->
 <!-- MarkDownLint-disable MD028 -->
 
+⚠️ THIS DOCUMENT IS NO LONGER VALID AS IT HAS BEING REPLACED BY THE CODE GENERATION TOOL: `lingo`
+
 Making an application work across different locales, is definitely no trivial task and after having dipped one's toe into using a library like __go-i18n__, it quickly becomes apparent that this can become a tiresome task. In particular, defining custom i18n Messages for translate-able content can easily become inconsistent if due care is not taken.
 
 This document describes different scenarios and some standards that can be employed to help keep definitions consistent. Of course these are not mandatory, third parties are free to define i18n.Messages and data templates as they see fit, but this is being documented for the purposes of keeping __snivilised__ projects inline.

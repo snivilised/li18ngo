@@ -74,6 +74,7 @@ var underlyingTypeByName = func() map[string]enums.UnderlyingType {
 		enums.UnderlyingTypeStaticError,
 		enums.UnderlyingTypeSentinelError,
 		enums.UnderlyingTypeStaticErrorWrapper,
+		enums.UnderlyingTypeStaticErrorWrapperMsg,
 		enums.UnderlyingTypeDynamicError,
 		enums.UnderlyingTypeDynamicErrorWrapper,
 	}
@@ -589,6 +590,7 @@ func validate(entries []underlierEntry, verbose bool) error {
 			ut == enums.UnderlyingTypeStaticError ||
 			ut == enums.UnderlyingTypeSentinelError ||
 			ut == enums.UnderlyingTypeStaticErrorWrapper ||
+			ut == enums.UnderlyingTypeStaticErrorWrapperMsg ||
 			ut == enums.UnderlyingTypeStaticCobra
 
 		isDynamic := ut == enums.UnderlyingTypeDynamicGeneral ||
@@ -597,15 +599,18 @@ func validate(entries []underlierEntry, verbose bool) error {
 			ut == enums.UnderlyingTypeDynamicCobra
 
 		isWrapper := ut == enums.UnderlyingTypeStaticErrorWrapper ||
+			ut == enums.UnderlyingTypeStaticErrorWrapperMsg ||
 			ut == enums.UnderlyingTypeDynamicErrorWrapper
 
 		hasFields := len(e.Fields) > 0
 
-		// Static types must have no fields (except StaticWrapper which has
-		// no Fields at all — Wrapped is implicit).
+		// StaticErrorWrapper (no-message variant) must have no Fields — Wrapped is
+		// implicit on the error struct only, not interpolated in Other. Use
+		// UnderlyingTypeStaticErrorWrapperMsg if you need {{.Wrapped}} in Other.
 		if ut == enums.UnderlyingTypeStaticErrorWrapper && hasFields {
 			errs = append(errs, validationError{e.MessageID, "Fields",
-				"UnderlyingTypeStaticErrorWrapper must not declare Fields (Wrapped is implicit)"})
+				"UnderlyingTypeStaticErrorWrapper must not declare Fields; " +
+					"use UnderlyingTypeStaticErrorWrapperMsg if you need {{.Wrapped}} in Other"})
 		} else if isStatic && !isWrapper && hasFields {
 			errs = append(errs, validationError{e.MessageID, "Fields",
 				"static type must not have Fields"})
@@ -646,15 +651,13 @@ func validate(entries []underlierEntry, verbose bool) error {
 		// Validate {{.Token}} consistency.
 		tokens := extractTemplateTokens(e.Other)
 		fieldNames := map[string]bool{}
+
 		for _, f := range e.Fields {
-			if f.GoType != "error" {
-				// error fields are represented as string in the template data.
-				fieldNames[f.Note] = true
-			} else {
-				// Wrapped can appear as {{.Wrapped}} — it is valid.
-				fieldNames[f.Note] = true
-			}
+			// All fields - including the error-typed Wrapped field on wrapper
+			// types - are valid {{.Token}} references in Other.
+			fieldNames[f.Note] = true
 		}
+
 		for _, tok := range tokens {
 			if !fieldNames[tok] {
 				errs = append(errs, validationError{e.MessageID, tok,
@@ -1059,6 +1062,58 @@ func New{{.ErrorStruct}}(wrapped error) error {
 }
 `
 
+// tmplErrorStaticWrapperMsg generates a static wrapping error whose
+// translated message includes the wrapped error's text via {{.Wrapped}}:
+//
+//	XxxErrorTemplData{Wrapped string}  +  XxxError{Wrapped error}  +
+//	Error()/Unwrap()                   +  NewXxxError(wrapped error)
+//
+// Use this type when Other contains {{.Wrapped}}.
+// Use UnderlyingTypeStaticErrorWrapper when the message text is fully fixed.
+const tmplErrorStaticWrapperMsg = `{{.ErrorTDComment}}
+type {{.ErrorTD}} struct {
+	{{.Base}}
+	// Wrapped is the string representation of the wrapped error,
+	// used for go-i18n template interpolation via {{"{{"}} .Wrapped {{"}}"}}.
+	Wrapped string
+}
+
+// Message creates a new i18n message using the template data.
+func (td {{.ErrorTD}}) Message() *i18n.Message {
+	return &i18n.Message{
+		ID:          {{printf "%q" .MessageID}},
+		Description: {{printf "%q" .Description}},
+		Other:       {{.Other}},
+	}
+}
+
+{{.ErrorComment}}
+type {{.ErrorStruct}} struct {
+	li18ngo.LocalisableError
+	Wrapped error
+}
+
+// Error returns the combined wrapped and localised error message.
+func (e {{.ErrorStruct}}) Error() string {
+	return fmt.Sprintf("%v, %v", e.Wrapped.Error(), li18ngo.Text(e.Data))
+}
+
+// Unwrap returns the wrapped error.
+func (e {{.ErrorStruct}}) Unwrap() error {
+	return e.Wrapped
+}
+
+{{wrap (printf "New%s creates a new %s wrapping wrapped." .ErrorStruct .ErrorStruct) "// " 80}}
+func New{{.ErrorStruct}}(wrapped error) error {
+	return &{{.ErrorStruct}}{
+		LocalisableError: li18ngo.LocalisableError{
+			Data: {{.ErrorTD}}{Wrapped: wrapped.Error()},
+		},
+		Wrapped: wrapped,
+	}
+}
+`
+
 // tmplErrorDynamic generates a dynamic error with no wrapping:
 //
 //	XxxTemplData  +  XxxError  +  NewXxxError  +  AsXxxError
@@ -1316,6 +1371,7 @@ func generateErrors(pkg, base string, entries []underlierEntry) ([]byte, error) 
 	for _, e := range entries {
 		switch e.TypeName {
 		case enums.UnderlyingTypeStaticErrorWrapper,
+			enums.UnderlyingTypeStaticErrorWrapperMsg,
 			enums.UnderlyingTypeDynamicErrorWrapper:
 			needFmt = true
 		}
@@ -1352,6 +1408,8 @@ func renderErrorEntry(e underlierEntry, base string) (string, error) {
 		return execTemplate("errorCore", tmplErrorCore, td)
 	case enums.UnderlyingTypeStaticErrorWrapper:
 		return execTemplate("errorStaticWrapper", tmplErrorStaticWrapper, td)
+	case enums.UnderlyingTypeStaticErrorWrapperMsg:
+		return execTemplate("errorStaticWrapperMsg", tmplErrorStaticWrapperMsg, td)
 	case enums.UnderlyingTypeDynamicError:
 		return execTemplate("errorDynamic", tmplErrorDynamic, td)
 	case enums.UnderlyingTypeDynamicErrorWrapper:
