@@ -153,7 +153,9 @@ func verifyLanguage(lang *LanguageInfo) {
 	// 'Create' function on UseOptions.
 	//
 	if _, found := lang.From.Sources[Li18ngoSourceID]; !found {
-		lang.From.Sources[Li18ngoSourceID] = TranslationSource{Name: "li18ngo"}
+		lang.From.Sources[Li18ngoSourceID] = TranslationSource{
+			Name: "li18ngo",
+		}
 	}
 }
 
