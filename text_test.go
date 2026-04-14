@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/snivilised/li18ngo"
@@ -16,8 +17,68 @@ import (
 )
 
 const (
-	relative = "test/data/l10n"
+	relative             = "test/data/l10n"
+	TestGrafficoSourceID = "github.com/snivilised/graffico"
 )
+
+type grafficoData struct{}
+
+func (td grafficoData) SourceID() string {
+	return TestGrafficoSourceID
+}
+
+// =============================================================================
+// 📨 PavementGraffitiReportGraffico
+//
+// A test message for pavement graffiti reporting.
+// =============================================================================
+
+// PavementGraffitiReportGrafficoTemplData Report of graffiti found on a
+// pavement.
+type PavementGraffitiReportGrafficoTemplData struct {
+	grafficoData
+	// Primary is the primary colour of the graffiti
+	Primary string
+}
+
+// Message returns the i18n message for PavementGraffitiReportGrafficoTemplData.
+func (td PavementGraffitiReportGrafficoTemplData) Message() *i18n.Message {
+	return &i18n.Message{
+		ID:          "pavement-graffiti-report.graffico.test",
+		Description: "Report of graffiti found on a pavement",
+		Other:       "Found graffiti on pavement; primary colour: '{{.Primary}}'",
+	}
+}
+
+// NewPavementGraffitiReportGrafficoTemplData creates a new
+// PavementGraffitiReportGrafficoTemplData.
+func NewPavementGraffitiReportGrafficoTemplData(primary string) PavementGraffitiReportGrafficoTemplData {
+	return PavementGraffitiReportGrafficoTemplData{
+		grafficoData: grafficoData{},
+		Primary:      primary,
+	}
+}
+
+// =============================================================================
+// 📨 WrongSourceIDGrafficoTest
+//
+// This message has the wrong source ID and should be ignored by i18n-gen.
+// =============================================================================
+
+// WrongSourceIDGrafficoTemplData Message with wrong source ID for testing
+// purposes.
+type WrongSourceIDGrafficoTemplData struct {
+	grafficoData
+}
+
+// Message returns the i18n message for WrongSourceIDGrafficoTestTemplData.
+func (td WrongSourceIDGrafficoTemplData) Message() *i18n.Message {
+	return &i18n.Message{
+		ID:          "wrong-source-id.graffico.test",
+		Description: "Message with wrong source ID for testing purposes",
+		Other:       "This message should be ignored by i18n-gen.",
+	}
+}
 
 var _ = Describe("Text", Ordered, func() {
 	var (
@@ -66,15 +127,15 @@ var _ = Describe("Text", Ordered, func() {
 					Fail(err.Error())
 				}
 
-				err := li18ngo.NewThirdPartyErr(errors.New("computer says no"))
+				err := locale.NewThirdPartyWrapperError(errors.New("computer says no"))
 				Expect(err.Error()).To(ContainSubstring("computer says no"))
 			})
 
 			Context("Text", func() {
 				Context("given: a template data instance", func() {
 					It("🧪 should: evaluate translated text", func() {
-						Expect(li18ngo.Text(li18ngo.ThirdPartyErrorTemplData{
-							Error: errors.New("out of stock"),
+						Expect(li18ngo.Text(locale.ThirdPartyWrapperErrorTemplData{
+							Wrapped: "out of stock",
 						})).NotTo(BeNil())
 					})
 				})
@@ -97,14 +158,14 @@ var _ = Describe("Text", Ordered, func() {
 		Context("Text", func() {
 			Context("given: a template data instance", func() {
 				It("🧪 should: evaluate translated text(internationalization)", func() {
-					text := li18ngo.Text(InternationalisationTemplData{})
+					text := li18ngo.Text(locale.InternationalisationTemplData{})
 					Expect(text).To(
 						Equal("internationalization"),
 					)
 				})
 
 				It("🧪 should: evaluate translated text(localization)", func() {
-					Expect(li18ngo.Text(LocalisationTemplData{})).To(
+					Expect(li18ngo.Text(locale.LocalisationTemplData{})).To(
 						Equal("localization"),
 					)
 				})
@@ -128,7 +189,7 @@ var _ = Describe("Text", Ordered, func() {
 				}); err != nil {
 					Fail(err.Error())
 				}
-				actual := li18ngo.Text(PavementGraffitiReportTemplData{
+				actual := li18ngo.Text(PavementGraffitiReportGrafficoTemplData{
 					Primary: "Violet",
 				})
 				Expect(actual).To(Equal(expectUS))
@@ -151,7 +212,7 @@ var _ = Describe("Text", Ordered, func() {
 					Fail(err.Error())
 				}
 
-				actual := li18ngo.Text(InternationalisationTemplData{})
+				actual := li18ngo.Text(locale.InternationalisationTemplData{})
 				Expect(actual).To(Equal("internationalisation"))
 			})
 		})
@@ -161,7 +222,7 @@ var _ = Describe("Text", Ordered, func() {
 		Context("Foreign Language", func() {
 			Context("given: source path exists", func() {
 				It("🧪 should: create localizer from source path", func() {
-					actual := testTranslationPath(&textTE{
+					actual := testPavementGraffitiUS(&textTE{
 						sourcePath:        l10nPath,
 						defaultAcceptable: true,
 					})
@@ -172,7 +233,7 @@ var _ = Describe("Text", Ordered, func() {
 
 			Context("given: path exists", func() {
 				It("🧪 should: create localizer from path", func() {
-					actual := testTranslationPath(&textTE{
+					actual := testPavementGraffitiUS(&textTE{
 						path:              l10nPath,
 						defaultAcceptable: true,
 					})
@@ -183,7 +244,7 @@ var _ = Describe("Text", Ordered, func() {
 
 			Context("given: neither path exists", func() {
 				It("🧪 should: create localizer using default language", func() {
-					actual := testTranslationPath(&textTE{
+					actual := testPavementGraffitiUS(&textTE{
 						defaultAcceptable: true,
 					})
 
@@ -203,7 +264,7 @@ var _ = Describe("Text", Ordered, func() {
 						}
 					}()
 
-					_ = testTranslationPath(&textTE{
+					_ = testPavementGraffitiUS(&textTE{
 						defaultAcceptable: false,
 					})
 				})

@@ -7,10 +7,6 @@ import (
 	"golang.org/x/text/language"
 )
 
-// 📚 package: translate contains internal li18ngo definitions that
-// client does not need direct access to, unless explicitly exposed
-// by li18ngo-api.go.
-
 const (
 	// Li18ngoSourceID the id that represents this module. If client want
 	// to provides translations for languages that li18ngo does not, then
@@ -23,20 +19,38 @@ const (
 )
 
 var (
+	// ErrSafePanicWarning the error emitted via a panic if the client has not called
+	// Use before using any functionality in this package.
 	ErrSafePanicWarning = errors.New("please ensure li18ngo.Use is invoked")
 )
 
 type (
+	// SupportedLanguages is a list of supported languages for this package.
 	SupportedLanguages []language.Tag
 
+	// Localisable represents the data required to localise a message.
 	Localisable interface {
+		// Message returns the i18n.Message to be localised.
 		Message() *i18n.Message
+
+		// SourceID returns the source id of the message. This is used to determine which
+		// i18n.Localizer to use for localising the message. The source id is typically
+		// the name of the package that is the source of the message. So for example,
+		// if a message is defined in a package called "github.com/snivilised/foo",
+		// then the source id would be "github.com/snivilised/foo". This allows
+		// client applications to have multiple translation files for different packages
+		// and ensures that the correct translation file is used for each message.
 		SourceID() string
 	}
 
 	TranslationSource struct {
 		// Name of dependency's translation file
 		Name string
+
+		// Path to the translation file. This is optional as the client can specify
+		// a default path for all translation files using the LoadFrom.Path field.
+		// If not specified, then a search will be performed in the current working
+		// directory for the translation file.
 		Path string
 	}
 
@@ -46,7 +60,6 @@ type (
 	// LoadFrom denotes where to load the translation file from
 	LoadFrom struct {
 		// Path denoting where to load language file from, defaults to exe location
-		//
 		Path string
 
 		// Sources are the translation files that need to be loaded. They represent
@@ -58,7 +71,6 @@ type (
 		// So li18ngo would use "github.com/snivilised/li18ngo" but clients
 		// are free to use whatever naming scheme they want to use for their own
 		// dependencies.
-		//
 		Sources TranslationFiles
 	}
 
@@ -74,27 +86,22 @@ type (
 	// UseOptions the options provided to the Use function
 	UseOptions struct {
 		// Tag sets the language to use
-		//
 		Tag language.Tag
 
 		// From denotes where to load the translation file from
-		//
 		From LoadFrom
 
 		// DefaultIsAcceptable controls whether an error is returned if the
 		// request language is not available. By default DefaultIsAcceptable
 		// is true so that the application continues in the default language
 		// even if the requested language is not available.
-		//
 		DefaultIsAcceptable bool
 
 		// Create allows the client to  override the default function to create
 		// the i18n Localizer(s) (1 per language).
-		//
 		Create LocalizerCreatorFn
 
 		// Custom set-able by the client for what ever purpose is required.
-		//
 		Custom any
 
 		// FS is a file system from where translations are loaded from. This
@@ -112,26 +119,29 @@ type (
 		// Default language reflects the base language. If all else fails, messages will
 		// be in this language. It is fixed at BritishEnglish reflecting the language this
 		// package is written in.
-		//
 		Default language.Tag
 
 		// Supported indicates the list of languages for which translations are available.
-		//
 		Supported SupportedLanguages
 	}
 
 	LocalizerInfo struct {
 		// Localizer by default created internally, but can be overridden by
 		// the client if they provide a create function to the Translator Factory
-		//
 		Localizer *i18n.Localizer
 
 		SourceID string
 	}
 
+	// Translator is the interface that represents a translator. It is responsible
+	// for localising messages and providing information about the language being used.
 	Translator interface {
+		// Localise localises the message and returns the translated string.
 		Localise(data Localisable) string
+
+		// LanguageInfo returns the language information of the translator.
 		LanguageInfo() *LanguageInfo
+
 		negotiate(other Translator) (Translator, error)
 		add(info *LocalizerInfo, source *TranslationSource)
 	}

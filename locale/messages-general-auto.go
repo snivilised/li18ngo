@@ -48,39 +48,6 @@ func (td LocalisationTemplData) Message() *i18n.Message {
 }
 
 // =============================================================================
-// 📨 PavementGraffitiReportGrafficoTest
-//
-// A test message for pavement graffiti reporting.
-// =============================================================================
-
-// PavementGraffitiReportGrafficoTestTemplData Report of graffiti found on a
-// pavement.
-type PavementGraffitiReportGrafficoTestTemplData struct {
-	Li18ngoTemplData
-	// Primary is the primary colour of the graffiti
-	Primary string
-}
-
-// Message returns the i18n message for
-// PavementGraffitiReportGrafficoTestTemplData.
-func (td PavementGraffitiReportGrafficoTestTemplData) Message() *i18n.Message {
-	return &i18n.Message{
-		ID:          "pavement-graffiti-report.graffico.test",
-		Description: "Report of graffiti found on a pavement",
-		Other:       "Found graffiti on pavement; primary colour: '{{.Primary}}'",
-	}
-}
-
-// NewPavementGraffitiReportGrafficoTestTemplData creates a new
-// PavementGraffitiReportGrafficoTestTemplData.
-func NewPavementGraffitiReportGrafficoTestTemplData(primary string) PavementGraffitiReportGrafficoTestTemplData {
-	return PavementGraffitiReportGrafficoTestTemplData{
-		Li18ngoTemplData: Li18ngoTemplData{},
-		Primary:          primary,
-	}
-}
-
-// =============================================================================
 // 📨 UsingConfigFile
 //
 // UsingConfigFile is printed on startup to indicate which configuration file
@@ -108,26 +75,5 @@ func NewUsingConfigFileTemplData(configFileName string) UsingConfigFileTemplData
 	return UsingConfigFileTemplData{
 		Li18ngoTemplData: Li18ngoTemplData{},
 		ConfigFileName:   configFileName,
-	}
-}
-
-// =============================================================================
-// 📨 WrongSourceIDGrafficoTest
-//
-// This message has the wrong source ID and should be ignored by i18n-gen.
-// =============================================================================
-
-// WrongSourceIDGrafficoTestTemplData Message with wrong source ID for testing
-// purposes.
-type WrongSourceIDGrafficoTestTemplData struct {
-	Li18ngoTemplData
-}
-
-// Message returns the i18n message for WrongSourceIDGrafficoTestTemplData.
-func (td WrongSourceIDGrafficoTestTemplData) Message() *i18n.Message {
-	return &i18n.Message{
-		ID:          "wrong-source-id.graffico.test",
-		Description: "Message with wrong source ID for testing purposes",
-		Other:       "This message should be ignored by i18n-gen.",
 	}
 }

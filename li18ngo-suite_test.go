@@ -5,7 +5,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
 	"github.com/snivilised/li18ngo"
 	"github.com/snivilised/li18ngo/internal/translate"
 	"github.com/snivilised/li18ngo/locale"
@@ -28,7 +27,7 @@ const (
 	expectGB = "Found graffiti on pavement; primary colour: 'Violet'"
 )
 
-func testTranslationPath(entry *textTE) string {
+func testPavementGraffitiUS(entry *textTE) string {
 	// this test form required, because DescribeTable can't be used
 	// due to not being able to setup state correctly, eg l10nPath
 	//
@@ -48,7 +47,7 @@ func testTranslationPath(entry *textTE) string {
 		Fail(err.Error())
 	}
 
-	return li18ngo.Text(PavementGraffitiReportTemplData{
+	return li18ngo.Text(PavementGraffitiReportGrafficoTemplData{
 		Primary: "Violet",
 	})
 }

@@ -97,31 +97,6 @@ var underliers = Underliers{
 		Other:       "internationalisation",
 	},
 
-	"pavement-graffiti-report.graffico.test": {
-		MessageID:   "pavement-graffiti-report.graffico.test",
-		Seed:        "PavementGraffitiReportGrafficoTest",
-		TypeName:    enums.UnderlyingTypeDynamicGeneral,
-		Description: "Report of graffiti found on a pavement",
-		Story:       "A test message for pavement graffiti reporting.",
-		Other:       "Found graffiti on pavement; primary colour: '{{.Primary}}'",
-		Fields: []UnderlyingField{
-			{
-				Note:   "Primary",
-				GoType: "string",
-				Tale:   "is the primary colour of the graffiti",
-			},
-		},
-	},
-
-	"wrong-source-id.graffico.test": {
-		MessageID:   "wrong-source-id.graffico.test",
-		Seed:        "WrongSourceIDGrafficoTest",
-		TypeName:    enums.UnderlyingTypeStaticGeneral,
-		Description: "Message with wrong source ID for testing purposes",
-		Story:       "This message has the wrong source ID and should be ignored by i18n-gen.",
-		Other:       "This message should be ignored by i18n-gen.",
-	},
-
 	// -------------------------------------------------------------------------
 	// Error messages
 	// -------------------------------------------------------------------------
@@ -163,9 +138,14 @@ var underliers = Underliers{
 		},
 	},
 
+	// TODO: generating silly function name, eg: locale.NewThirdPartyErrorWrapperError
+	// The source ID for this message is wrong. It is currently li18ngo, instead of
+	// being graffico and that is because PavementGraffitiReportGrafficoTemplData is
+	// defined with Li18ngoTemplData instead of GrafficoData, which has been erroneously
+	// removed.
 	"third-party.error-wrapper-msg": {
 		MessageID:   "third-party.error-wrapper-msg",
-		Seed:        "ThirdPartyErrorWrapper",
+		Seed:        "ThirdPartyWrapper",
 		TypeName:    enums.UnderlyingTypeStaticErrorWrapperMsg,
 		Description: "Wrapper for third-party errors",
 		Story:       "ThirdPartyErrorWrapper is used to wrap errors from third-party libraries.",

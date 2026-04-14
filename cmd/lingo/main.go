@@ -51,53 +51,97 @@ import (
 	"strings"
 	"text/template"
 	"unicode"
-
-	"github.com/snivilised/li18ngo/locale/enums"
 )
 
 // ---------------------------------------------------------------------------
-// UnderlyingType reverse lookup
+// Local mirror of locale/enums.UnderlyingType
+//
+// SYNC NOTICE: this type mirrors locale/enums.UnderlyingType exactly.
+// Importing that package directly would create a cyclic dependency because
+// lingo generates code into the locale package, which (transitively) imports
+// the root li18ngo module.
+//
+// When adding a new UnderlyingType constant you MUST:
+//  1. Add the constant to locale/enums/underlying-type.en.go and re-run
+//     stringer to regenerate underlying-type-en-auto.go.
+//  2. Add the matching constant below (same name, same position in the iota).
+//  3. Register the new constant in underlyingTypeByName (two entries: trimmed
+//     and full-prefix form). String() derives from that map so no further
+//     change is needed there.
+//  4. Add the new constant to whichever switch statements require it:
+//     validate, splitEntries, emoji, generateErrors, renderErrorEntry.
 // ---------------------------------------------------------------------------
 
-// underlyingTypeByName maps the stringer-trimmed constant names
-// (e.g. "StaticCobra") back to their enum values.  The trimmed names come
-// from identOrSel, which returns the selector or ident text as written in
-// the source — e.g. enums.UnderlyingTypeStaticCobra → "UnderlyingTypeStaticCobra".
-// We therefore need to strip the "UnderlyingType" prefix ourselves here.
-var underlyingTypeByName = func() map[string]enums.UnderlyingType {
-	all := []enums.UnderlyingType{
-		enums.UnderlyingTypeUndefined,
-		enums.UnderlyingTypeStaticCobra,
-		enums.UnderlyingTypeDynamicCobra,
-		enums.UnderlyingTypeStaticGeneral,
-		enums.UnderlyingTypeDynamicGeneral,
-		enums.UnderlyingTypeStaticError,
-		enums.UnderlyingTypeSentinelError,
-		enums.UnderlyingTypeStaticErrorWrapper,
-		enums.UnderlyingTypeStaticErrorWrapperMsg,
-		enums.UnderlyingTypeDynamicError,
-		enums.UnderlyingTypeDynamicErrorWrapper,
-	}
-	m := make(map[string]enums.UnderlyingType, len(all))
-	for _, v := range all {
-		// String() returns the trimprefix'd name, e.g. "StaticCobra".
-		m[v.String()] = v
-		// Also register the full constant name so that source written as
-		// UnderlyingTypeStaticCobra (without a package selector) resolves.
-		m["UnderlyingType"+v.String()] = v
-	}
-	return m
-}()
+type underlyingType int
 
-// parseUnderlyingType converts the string produced by identOrSel back to an
-// enum value.  identOrSel returns the selector name from expressions like
-// enums.UnderlyingTypeStaticCobra → "UnderlyingTypeStaticCobra", or just
-// the ident for an unqualified reference → "UnderlyingTypeStaticCobra".
-func parseUnderlyingType(s string) (enums.UnderlyingType, error) {
+// String returns the canonical name of the constant, matching the trimmed
+// form used in underlyingTypeByName (e.g. "StaticCobra"). This is used
+// only for diagnostic output — it is not the stringer from locale/enums.
+func (ut underlyingType) String() string {
+	for name, v := range underlyingTypeByName {
+		// Use only the trimmed form (no "UnderlyingType" prefix) so the
+		// output is concise and matches what appears in source files.
+		if v == ut && !strings.HasPrefix(name, "UnderlyingType") {
+			return name
+		}
+	}
+	return fmt.Sprintf("underlyingType(%d)", int(ut))
+}
+
+const (
+	underlyingTypeUndefined underlyingType = iota
+	underlyingTypeStaticCobra
+	underlyingTypeDynamicCobra
+	underlyingTypeStaticGeneral
+	underlyingTypeDynamicGeneral
+	underlyingTypeStaticError
+	underlyingTypeSentinelError
+	underlyingTypeStaticErrorWrapper
+	underlyingTypeStaticErrorWrapperMsg
+	underlyingTypeDynamicError
+	underlyingTypeDynamicErrorWrapper
+)
+
+// underlyingTypeNames maps the string constant names as they appear in source
+// back to their local enum values. Two forms are registered for each value:
+//
+//   - trimmed:    "StaticCobra"              (selector's Sel.Name after stripping prefix)
+//   - full-prefix: "UnderlyingTypeStaticCobra" (unqualified ident form)
+var underlyingTypeByName = map[string]underlyingType{
+	"Undefined":                           underlyingTypeUndefined,
+	"UnderlyingTypeUndefined":             underlyingTypeUndefined,
+	"StaticCobra":                         underlyingTypeStaticCobra,
+	"UnderlyingTypeStaticCobra":           underlyingTypeStaticCobra,
+	"DynamicCobra":                        underlyingTypeDynamicCobra,
+	"UnderlyingTypeDynamicCobra":          underlyingTypeDynamicCobra,
+	"StaticGeneral":                       underlyingTypeStaticGeneral,
+	"UnderlyingTypeStaticGeneral":         underlyingTypeStaticGeneral,
+	"DynamicGeneral":                      underlyingTypeDynamicGeneral,
+	"UnderlyingTypeDynamicGeneral":        underlyingTypeDynamicGeneral,
+	"StaticError":                         underlyingTypeStaticError,
+	"UnderlyingTypeStaticError":           underlyingTypeStaticError,
+	"SentinelError":                       underlyingTypeSentinelError,
+	"UnderlyingTypeSentinelError":         underlyingTypeSentinelError,
+	"StaticErrorWrapper":                  underlyingTypeStaticErrorWrapper,
+	"UnderlyingTypeStaticErrorWrapper":    underlyingTypeStaticErrorWrapper,
+	"StaticErrorWrapperMsg":               underlyingTypeStaticErrorWrapperMsg,
+	"UnderlyingTypeStaticErrorWrapperMsg": underlyingTypeStaticErrorWrapperMsg,
+	"DynamicError":                        underlyingTypeDynamicError,
+	"UnderlyingTypeDynamicError":          underlyingTypeDynamicError,
+	"DynamicErrorWrapper":                 underlyingTypeDynamicErrorWrapper,
+	"UnderlyingTypeDynamicErrorWrapper":   underlyingTypeDynamicErrorWrapper,
+}
+
+// parseUnderlyingType converts the string produced by identOrSel back to a
+// local underlyingType value. identOrSel returns the selector name from
+// expressions like enums.UnderlyingTypeStaticCobra ->
+// "UnderlyingTypeStaticCobra", or just the ident for an unqualified
+// reference.
+func parseUnderlyingType(s string) (underlyingType, error) {
 	if v, ok := underlyingTypeByName[s]; ok {
 		return v, nil
 	}
-	return enums.UnderlyingTypeUndefined,
+	return underlyingTypeUndefined,
 		fmt.Errorf("unknown UnderlyingType constant %q", s)
 }
 
@@ -268,7 +312,7 @@ func searchForLocaleDir(repoRoot string) (string, error) {
 type underlierEntry struct {
 	MessageID   string
 	Seed        string
-	TypeName    enums.UnderlyingType
+	TypeName    underlyingType
 	Description string
 	Story       string
 	Other       string
@@ -586,28 +630,28 @@ func validate(entries []underlierEntry, verbose bool) error {
 
 		ut := e.TypeName
 
-		isStatic := ut == enums.UnderlyingTypeStaticGeneral ||
-			ut == enums.UnderlyingTypeStaticError ||
-			ut == enums.UnderlyingTypeSentinelError ||
-			ut == enums.UnderlyingTypeStaticErrorWrapper ||
-			ut == enums.UnderlyingTypeStaticErrorWrapperMsg ||
-			ut == enums.UnderlyingTypeStaticCobra
+		isStatic := ut == underlyingTypeStaticGeneral ||
+			ut == underlyingTypeStaticError ||
+			ut == underlyingTypeSentinelError ||
+			ut == underlyingTypeStaticErrorWrapper ||
+			ut == underlyingTypeStaticErrorWrapperMsg ||
+			ut == underlyingTypeStaticCobra
 
-		isDynamic := ut == enums.UnderlyingTypeDynamicGeneral ||
-			ut == enums.UnderlyingTypeDynamicError ||
-			ut == enums.UnderlyingTypeDynamicErrorWrapper ||
-			ut == enums.UnderlyingTypeDynamicCobra
+		isDynamic := ut == underlyingTypeDynamicGeneral ||
+			ut == underlyingTypeDynamicError ||
+			ut == underlyingTypeDynamicErrorWrapper ||
+			ut == underlyingTypeDynamicCobra
 
-		isWrapper := ut == enums.UnderlyingTypeStaticErrorWrapper ||
-			ut == enums.UnderlyingTypeStaticErrorWrapperMsg ||
-			ut == enums.UnderlyingTypeDynamicErrorWrapper
+		isWrapper := ut == underlyingTypeStaticErrorWrapper ||
+			ut == underlyingTypeStaticErrorWrapperMsg ||
+			ut == underlyingTypeDynamicErrorWrapper
 
 		hasFields := len(e.Fields) > 0
 
-		// StaticErrorWrapper (no-message variant) must have no Fields — Wrapped is
-		// implicit on the error struct only, not interpolated in Other. Use
+		// StaticErrorWrapper (no-message variant) must have no Fields — Wrapped
+		// is implicit on the error struct only, not interpolated in Other. Use
 		// UnderlyingTypeStaticErrorWrapperMsg if you need {{.Wrapped}} in Other.
-		if ut == enums.UnderlyingTypeStaticErrorWrapper && hasFields {
+		if ut == underlyingTypeStaticErrorWrapper && hasFields {
 			errs = append(errs, validationError{e.MessageID, "Fields",
 				"UnderlyingTypeStaticErrorWrapper must not declare Fields; " +
 					"use UnderlyingTypeStaticErrorWrapperMsg if you need {{.Wrapped}} in Other"})
@@ -643,21 +687,20 @@ func validate(entries []underlierEntry, verbose bool) error {
 					"a field with GoType \"error\" is only permitted on wrapper types"})
 			}
 		}
-		if isWrapper && ut != enums.UnderlyingTypeStaticErrorWrapper && len(errorFields) == 0 {
+		if isWrapper && ut != underlyingTypeStaticErrorWrapper && len(errorFields) == 0 {
 			errs = append(errs, validationError{e.MessageID, "Fields",
 				"wrapper type must have a Fields entry {Note:\"Wrapped\", GoType:\"error\"}"})
 		}
 
-		// Validate {{.Token}} consistency.
+		// Validate {{.Token}} consistency: every token in Other must have a
+		// matching Fields entry, and every Fields entry must appear in Other.
 		tokens := extractTemplateTokens(e.Other)
 		fieldNames := map[string]bool{}
-
 		for _, f := range e.Fields {
 			// All fields - including the error-typed Wrapped field on wrapper
 			// types - are valid {{.Token}} references in Other.
 			fieldNames[f.Note] = true
 		}
-
 		for _, tok := range tokens {
 			if !fieldNames[tok] {
 				errs = append(errs, validationError{e.MessageID, tok,
@@ -684,7 +727,7 @@ func validate(entries []underlierEntry, verbose bool) error {
 		if e.MessageID == "" {
 			errs = append(errs, validationError{e.MessageID, "MessageID", "MessageID must not be empty"})
 		}
-		if ut == enums.UnderlyingTypeUndefined {
+		if ut == underlyingTypeUndefined {
 			errs = append(errs, validationError{e.MessageID, "TypeName", "TypeName must not be UnderlyingTypeUndefined"})
 		}
 	}
@@ -695,7 +738,7 @@ func validate(entries []underlierEntry, verbose bool) error {
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("lingo: %d validation error(s) found — no files written:\n", len(errs)))
 	for _, err := range errs {
-		sb.WriteString("  • ")
+		sb.WriteString("  - ")
 		sb.WriteString(err.Error())
 		sb.WriteString("\n")
 	}
@@ -773,9 +816,9 @@ func generate(dir, pkgName, baseStruct string, entries []underlierEntry) error {
 func splitEntries(entries []underlierEntry) (cobra, general, errs []underlierEntry) {
 	for _, e := range entries {
 		switch e.TypeName {
-		case enums.UnderlyingTypeStaticCobra, enums.UnderlyingTypeDynamicCobra:
+		case underlyingTypeStaticCobra, underlyingTypeDynamicCobra:
 			cobra = append(cobra, e)
-		case enums.UnderlyingTypeStaticGeneral, enums.UnderlyingTypeDynamicGeneral:
+		case underlyingTypeStaticGeneral, underlyingTypeDynamicGeneral:
 			general = append(general, e)
 		default:
 			errs = append(errs, e)
@@ -860,7 +903,7 @@ func structDocComment(typeName, desc string) string {
 // ---------------------------------------------------------------------------
 
 // execTemplate parses text as a Go template, executes it with data, and
-// returns the resulting string.  A non-nil error means the template itself
+// returns the resulting string. A non-nil error means the template itself
 // is malformed — this is always a programmer error in lingo.
 func execTemplate(name, text string, data any) (string, error) {
 	t, err := template.New(name).Funcs(tmplFuncs).Parse(text)
@@ -876,10 +919,10 @@ func execTemplate(name, text string, data any) (string, error) {
 
 // tmplFuncs are the custom functions available inside every template.
 var tmplFuncs = template.FuncMap{
-	// lower returns the first character of s in lower case.
+	// lower returns s with its first character lowercased.
 	"lower": lowerFirst,
-	// wrap word-wraps text at width characters, prefixing every line
-	// with prefix. Used in templates to keep doc comments within 80 chars.
+	// wrap word-wraps text at width characters, prefixing every line with
+	// prefix. Used in templates to keep doc comments within 80 chars.
 	"wrap": func(text, prefix string, width int) string {
 		return wrapComment(text, prefix, width)
 	},
@@ -1022,7 +1065,7 @@ var Err{{.Seed}} = {{.ErrorStruct}}{
 // tmplErrorStaticWrapper generates a static wrapping error:
 //
 //	XxxErrorTemplData  +  XxxError{Wrapped error}  +
-//	Error()/Unwrap()   +  NewXxxError  +  AsXxxError
+//	Error()/Unwrap()   +  NewXxxError
 const tmplErrorStaticWrapper = `{{.ErrorTDComment}}
 type {{.ErrorTD}} struct {
 	{{.Base}}
@@ -1116,7 +1159,7 @@ func New{{.ErrorStruct}}(wrapped error) error {
 
 // tmplErrorDynamic generates a dynamic error with no wrapping:
 //
-//	XxxTemplData  +  XxxError  +  NewXxxError  +  AsXxxError
+//	XxxTemplData  +  XxxError  +  NewXxxError
 const tmplErrorDynamic = `{{.StructComment}}
 type {{.StructName}} struct {
 	{{.Base}}
@@ -1167,7 +1210,7 @@ func New{{.ErrorStruct}}({{.Params}}) error {
 // tmplErrorDynamicWrapper generates a dynamic wrapping error:
 //
 //	XxxTemplData (Wrapped as string)  +  XxxError (Wrapped as error)  +
-//	Error()/Unwrap()  +  NewXxxError(wrapped, fields...)  +  AsXxxError
+//	Error()/Unwrap()  +  NewXxxError(wrapped, fields...)
 //
 // The Wrapped field is stored as string in the template data (for
 // go-i18n interpolation via {{.Wrapped}}) and as error in the error
@@ -1266,11 +1309,11 @@ func renderHeader(pkg string, imports []string) string {
 // Banner helpers
 // ---------------------------------------------------------------------------
 
-func emoji(ut enums.UnderlyingType) string {
+func emoji(ut underlyingType) string {
 	switch ut {
-	case enums.UnderlyingTypeStaticCobra, enums.UnderlyingTypeDynamicCobra:
+	case underlyingTypeStaticCobra, underlyingTypeDynamicCobra:
 		return "🧊"
-	case enums.UnderlyingTypeStaticGeneral, enums.UnderlyingTypeDynamicGeneral:
+	case underlyingTypeStaticGeneral, underlyingTypeDynamicGeneral:
 		return "📨"
 	default:
 		return "❌"
@@ -1370,9 +1413,9 @@ func generateErrors(pkg, base string, entries []underlierEntry) ([]byte, error) 
 	needFmt := false
 	for _, e := range entries {
 		switch e.TypeName {
-		case enums.UnderlyingTypeStaticErrorWrapper,
-			enums.UnderlyingTypeStaticErrorWrapperMsg,
-			enums.UnderlyingTypeDynamicErrorWrapper:
+		case underlyingTypeStaticErrorWrapper,
+			underlyingTypeStaticErrorWrapperMsg,
+			underlyingTypeDynamicErrorWrapper:
 			needFmt = true
 		}
 	}
@@ -1402,20 +1445,20 @@ func generateErrors(pkg, base string, entries []underlierEntry) ([]byte, error) 
 func renderErrorEntry(e underlierEntry, base string) (string, error) {
 	td := newTemplateData(e, base)
 	switch e.TypeName {
-	case enums.UnderlyingTypeStaticError:
+	case underlyingTypeStaticError:
 		return execTemplate("errorStatic", tmplErrorStatic, td)
-	case enums.UnderlyingTypeSentinelError:
+	case underlyingTypeSentinelError:
 		return execTemplate("errorCore", tmplErrorCore, td)
-	case enums.UnderlyingTypeStaticErrorWrapper:
+	case underlyingTypeStaticErrorWrapper:
 		return execTemplate("errorStaticWrapper", tmplErrorStaticWrapper, td)
-	case enums.UnderlyingTypeStaticErrorWrapperMsg:
+	case underlyingTypeStaticErrorWrapperMsg:
 		return execTemplate("errorStaticWrapperMsg", tmplErrorStaticWrapperMsg, td)
-	case enums.UnderlyingTypeDynamicError:
+	case underlyingTypeDynamicError:
 		return execTemplate("errorDynamic", tmplErrorDynamic, td)
-	case enums.UnderlyingTypeDynamicErrorWrapper:
+	case underlyingTypeDynamicErrorWrapper:
 		return execTemplate("errorDynamicWrapper", tmplErrorDynamicWrapper, td)
 	default:
-		return fmt.Sprintf("// unknown type %q for %q\n", e.TypeName, e.Seed), nil
+		return fmt.Sprintf("// unknown type %s for %q\n", e.TypeName, e.Seed), nil
 	}
 }
 

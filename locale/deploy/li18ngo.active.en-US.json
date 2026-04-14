@@ -21,7 +21,7 @@
   },
   "pavement-graffiti-report.graffico.test": {
     "description": "Report of graffiti found on a pavement",
-    "other": "Found graffiti on sidewalk; primary colour: '{{.Primary}}'",
+    "other": "Found graffiti on sidewalk; primary color: '{{.Primary}}'",
     "hash": "sha1-efe58f2bf11a04394cd193cfd7c0aeb4242b375d"
   },
   "third-party.error": {
