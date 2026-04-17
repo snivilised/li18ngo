@@ -76,7 +76,7 @@ type underlyingType int
 
 // String returns the canonical name of the constant, matching the trimmed
 // form used in underlyingTypeByName (e.g. "StaticCobra"). This is used
-// only for diagnostic output — it is not the stringer from locale/enums.
+// only for diagnostic output - it is not the stringer from locale/enums.
 func (ut underlyingType) String() string {
 	for name, v := range underlyingTypeByName {
 		// Use only the trimmed form (no "UnderlyingType" prefix) so the
@@ -182,7 +182,7 @@ func run() error {
 	}
 
 	if *dryRun {
-		fmt.Printf("lingo: dry-run OK — no errors found, no files written (locale dir: '%s')\n", localeDir)
+		fmt.Printf("lingo: dry-run OK - no errors found, no files written (locale dir: '%s')\n", localeDir)
 		return nil
 	}
 
@@ -205,7 +205,7 @@ func findRepoRoot() (string, error) {
 		}
 		parent := filepath.Dir(dir)
 		if parent == dir {
-			return "", errors.New("could not find go.mod — are you inside a Go module?")
+			return "", errors.New("could not find go.mod - are you inside a Go module?")
 		}
 		dir = parent
 	}
@@ -442,7 +442,7 @@ func extractUnderliers(file *ast.File) ([]underlierEntry, error) {
 			if vs.Type != nil && !isUnderliersType(vs.Type) {
 				continue
 			}
-			// Inferred type — inspect the composite literal directly.
+			// Inferred type - inspect the composite literal directly.
 			for _, val := range vs.Values {
 				cl, ok := val.(*ast.CompositeLit)
 				if !ok {
@@ -566,10 +566,10 @@ func stringLit(node ast.Expr) string {
 			s := v.Value
 			if len(s) >= 2 {
 				if s[0] == '`' {
-					// Raw string literal — strip surrounding backticks.
+					// Raw string literal - strip surrounding backticks.
 					return s[1 : len(s)-1]
 				}
-				// Interpreted string literal — use strconv to handle escapes.
+				// Interpreted string literal - use strconv to handle escapes.
 				if unquoted, err := strconv.Unquote(s); err == nil {
 					return unquoted
 				}
@@ -648,7 +648,7 @@ func validate(entries []underlierEntry, verbose bool) error {
 
 		hasFields := len(e.Fields) > 0
 
-		// StaticErrorWrapper (no-message variant) must have no Fields — Wrapped
+		// StaticErrorWrapper (no-message variant) must have no Fields - Wrapped
 		// is implicit on the error struct only, not interpolated in Other. Use
 		// UnderlyingTypeStaticErrorWrapperMsg if you need {{.Wrapped}} in Other.
 		if ut == underlyingTypeStaticErrorWrapper && hasFields {
@@ -736,7 +736,7 @@ func validate(entries []underlierEntry, verbose bool) error {
 		return nil
 	}
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("lingo: %d validation error(s) found — no files written:\n", len(errs)))
+	sb.WriteString(fmt.Sprintf("lingo: %d validation error(s) found - no files written:\n", len(errs)))
 	for _, err := range errs {
 		sb.WriteString("  - ")
 		sb.WriteString(err.Error())
@@ -904,7 +904,7 @@ func structDocComment(typeName, desc string) string {
 
 // execTemplate parses text as a Go template, executes it with data, and
 // returns the resulting string. A non-nil error means the template itself
-// is malformed — this is always a programmer error in lingo.
+// is malformed - this is always a programmer error in lingo.
 func execTemplate(name, text string, data any) (string, error) {
 	t, err := template.New(name).Funcs(tmplFuncs).Parse(text)
 	if err != nil {

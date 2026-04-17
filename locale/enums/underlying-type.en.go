@@ -109,7 +109,7 @@ const (
 	UnderlyingTypeSentinelError // SentinelError
 
 	// UnderlyingTypeStaticErrorWrapper is a static error that wraps another
-	// error. The message text is fixed — {{.Wrapped}} must not appear in
+	// error. The message text is fixed - {{.Wrapped}} must not appear in
 	// Other. Use UnderlyingTypeStaticErrorWrapperMsg when you need the
 	// wrapped error's text to appear in the translated message.
 	UnderlyingTypeStaticErrorWrapper // StaticErrorWrapper
