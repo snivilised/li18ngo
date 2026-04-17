@@ -31,7 +31,7 @@
 
 ## 🔰 Introduction
 
-This project contains helpers to aid in the development of libraries and programs that require i18n support. It doesn't perform i18n itself, that is delegated to [go-i18n](https://github.com/nicksnyder/go-i18n). Rather it aims to provide functionality that makes using go-i18n easier. For example, implementing localised error messages can be a bit tedious and error prone so included within this module is a cli app, ___lingo___, that can generate all error related code (PS, this has not been implemented yet, so is still in the works).
+This project contains helpers to aid in the development of libraries and programs that require i18n support. It doesn't perform i18n itself, that is delegated to [go-i18n](https://github.com/nicksnyder/go-i18n). Rather it aims to provide functionality that makes using go-i18n easier. For example, implementing localised error messages can be a bit tedious and error prone so included within this module is a cli app, ___lingo___, that can generate all error related code.
 
 ## 📚 Usage
 
