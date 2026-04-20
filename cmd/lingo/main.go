@@ -694,6 +694,8 @@ func validate(entries []underlierEntry, verbose bool) error {
 
 		// Validate {{.Token}} consistency: every token in Other must have a
 		// matching Fields entry, and every Fields entry must appear in Other.
+		// For wrapper types the error-typed Wrapped field maps to a string
+		// field of the same name in TemplData, so it is a valid token too.
 		tokens := extractTemplateTokens(e.Other)
 		fieldNames := map[string]bool{}
 		for _, f := range e.Fields {
@@ -844,7 +846,7 @@ type templateData struct {
 	Description string
 	Other       string
 	Base        string
-	Fields      []fieldEntry
+	Fields      []fieldEntry // non-error fields only (GoType != "error")
 
 	StructName  string
 	ErrorTD     string
@@ -865,6 +867,10 @@ type templateData struct {
 }
 
 func newTemplateData(e underlierEntry, base string) templateData {
+	// Fields exposed to templates are the non-error fields only. The
+	// error-typed Wrapped field is handled implicitly by the wrapper
+	// templates as an unexported wrapped field on the error struct, so
+	// it must not appear in the field loop or the constructor parameter list.
 	nef := nonErrorFields(e.Fields)
 
 	structName := e.Seed + "TemplData"
@@ -1062,10 +1068,14 @@ var Err{{.Seed}} = {{.ErrorStruct}}{
 }
 `
 
-// tmplErrorStaticWrapper generates a static wrapping error:
+// tmplErrorStaticWrapper generates a static wrapping error.
 //
-//	XxxErrorTemplData  +  XxxError{Wrapped error}  +
-//	Error()/Unwrap()   +  NewXxxError
+// The error struct holds the wrapped error as an unexported field; the
+// static message text is fully fixed (no {{.Wrapped}} token).
+// Use UnderlyingTypeStaticErrorWrapperMsg when Other contains {{.Wrapped}}.
+//
+//	XxxErrorTemplData  +  XxxError{wrapped error}  +
+//	Error()/Unwrap()   +  NewXxxError(wrapped error)
 const tmplErrorStaticWrapper = `{{.ErrorTDComment}}
 type {{.ErrorTD}} struct {
 	{{.Base}}
@@ -1083,36 +1093,36 @@ func (td {{.ErrorTD}}) Message() *i18n.Message {
 {{.ErrorComment}}
 type {{.ErrorStruct}} struct {
 	li18ngo.LocalisableError
-	Wrapped error
+	wrapped error
 }
 
 // Error returns the combined wrapped and localised error message.
 func (e {{.ErrorStruct}}) Error() string {
-	return fmt.Sprintf("%v, %v", e.Wrapped.Error(), li18ngo.Text(e.Data))
+	return fmt.Sprintf("%v, %v", e.wrapped.Error(), li18ngo.Text(e.LocalisableError.Data))
 }
 
 // Unwrap returns the wrapped error.
 func (e {{.ErrorStruct}}) Unwrap() error {
-	return e.Wrapped
+	return e.wrapped
 }
 
 {{wrap (printf "New%s creates a new %s wrapping wrapped." .ErrorStruct .ErrorStruct) "// " 80}}
 func New{{.ErrorStruct}}(wrapped error) error {
 	return &{{.ErrorStruct}}{
 		LocalisableError: li18ngo.LocalisableError{Data: {{.ErrorTD}}{}},
-		Wrapped:          wrapped,
+		wrapped:          wrapped,
 	}
 }
 `
 
 // tmplErrorStaticWrapperMsg generates a static wrapping error whose
-// translated message includes the wrapped error's text via {{.Wrapped}}:
+// translated message includes the wrapped error's text via {{.Wrapped}}.
 //
-//	XxxErrorTemplData{Wrapped string}  +  XxxError{Wrapped error}  +
+// TemplData holds Wrapped as a string for go-i18n interpolation; the error
+// struct holds wrapped as an unexported error for runtime unwrapping.
+//
+//	XxxErrorTemplData{Wrapped string}  +  XxxError{wrapped error}  +
 //	Error()/Unwrap()                   +  NewXxxError(wrapped error)
-//
-// Use this type when Other contains {{.Wrapped}}.
-// Use UnderlyingTypeStaticErrorWrapper when the message text is fully fixed.
 const tmplErrorStaticWrapperMsg = `{{.ErrorTDComment}}
 type {{.ErrorTD}} struct {
 	{{.Base}}
@@ -1133,17 +1143,17 @@ func (td {{.ErrorTD}}) Message() *i18n.Message {
 {{.ErrorComment}}
 type {{.ErrorStruct}} struct {
 	li18ngo.LocalisableError
-	Wrapped error
+	wrapped error
 }
 
 // Error returns the combined wrapped and localised error message.
 func (e {{.ErrorStruct}}) Error() string {
-	return fmt.Sprintf("%v, %v", e.Wrapped.Error(), li18ngo.Text(e.Data))
+	return fmt.Sprintf("%v, %v", e.wrapped.Error(), li18ngo.Text(e.LocalisableError.Data))
 }
 
 // Unwrap returns the wrapped error.
 func (e {{.ErrorStruct}}) Unwrap() error {
-	return e.Wrapped
+	return e.wrapped
 }
 
 {{wrap (printf "New%s creates a new %s wrapping wrapped." .ErrorStruct .ErrorStruct) "// " 80}}
@@ -1152,14 +1162,17 @@ func New{{.ErrorStruct}}(wrapped error) error {
 		LocalisableError: li18ngo.LocalisableError{
 			Data: {{.ErrorTD}}{Wrapped: wrapped.Error()},
 		},
-		Wrapped: wrapped,
+		wrapped: wrapped,
 	}
 }
 `
 
-// tmplErrorDynamic generates a dynamic error with no wrapping:
+// tmplErrorDynamic generates a dynamic error with no wrapping.
 //
-//	XxxTemplData  +  XxxError  +  NewXxxError
+// The error struct embeds the TemplData struct directly, promoting all
+// fields onto the error value without duplication.
+//
+//	XxxTemplData (embedded in XxxError)  +  NewXxxError
 const tmplErrorDynamic = `{{.StructComment}}
 type {{.StructName}} struct {
 	{{.Base}}
@@ -1185,36 +1198,35 @@ func (td {{.StructName}}) Message() *i18n.Message {
 {{.ErrorComment}}
 type {{.ErrorStruct}} struct {
 	li18ngo.LocalisableError
-{{- range .Fields}}
-	{{.Note}} {{.GoType}}
-{{- end}}
+	{{.StructName}}
 }
 
 {{wrap (printf "New%s creates a new %s." .ErrorStruct .ErrorStruct) "// " 80}}
 func New{{.ErrorStruct}}({{.Params}}) error {
-	return &{{.ErrorStruct}}{
-		LocalisableError: li18ngo.LocalisableError{
-			Data: {{.StructName}}{
-{{- range .Fields}}
-				{{.Note}}: {{lower .Note}},
-{{- end}}
-			},
-		},
+	td := {{.StructName}}{
+		{{.Base}}: {{.Base}}{},
 {{- range .Fields}}
 		{{.Note}}: {{lower .Note}},
 {{- end}}
 	}
+	return &{{.ErrorStruct}}{
+		LocalisableError: li18ngo.LocalisableError{Data: td},
+		{{.StructName}}:  td,
+	}
 }
 `
 
-// tmplErrorDynamicWrapper generates a dynamic wrapping error:
+// tmplErrorDynamicWrapper generates a dynamic wrapping error.
 //
-//	XxxTemplData (Wrapped as string)  +  XxxError (Wrapped as error)  +
-//	Error()/Unwrap()  +  NewXxxError(wrapped, fields...)
+// TemplData holds the non-error fields plus Wrapped as a string (for
+// go-i18n interpolation via {{.Wrapped}}). The error struct embeds
+// TemplData to promote all fields, and additionally holds the wrapped
+// error as an unexported field for runtime unwrapping. No field is
+// stored twice.
 //
-// The Wrapped field is stored as string in the template data (for
-// go-i18n interpolation via {{.Wrapped}}) and as error in the error
-// struct (for unwrapping via errors.As / errors.Is).
+//	XxxTemplData{fields..., Wrapped string} (embedded in XxxError)  +
+//	XxxError{wrapped error}  +  Error()/Unwrap()  +
+//	NewXxxError(wrapped error, fields...)
 const tmplErrorDynamicWrapper = `{{.StructComment}}
 type {{.StructName}} struct {
 	{{.Base}}
@@ -1243,37 +1255,33 @@ func (td {{.StructName}}) Message() *i18n.Message {
 {{.ErrorComment}}
 type {{.ErrorStruct}} struct {
 	li18ngo.LocalisableError
-	Wrapped error
-{{- range .Fields}}
-	{{.Note}} {{.GoType}}
-{{- end}}
+	{{.StructName}}
+	wrapped error
 }
 
 // Error returns the combined wrapped and localised error message.
 func (e {{.ErrorStruct}}) Error() string {
-	return fmt.Sprintf("%v, %v", e.Wrapped.Error(), li18ngo.Text(e.Data))
+	return fmt.Sprintf("%v, %v", e.wrapped.Error(), li18ngo.Text(e.LocalisableError.Data))
 }
 
 // Unwrap returns the wrapped error.
 func (e {{.ErrorStruct}}) Unwrap() error {
-	return e.Wrapped
+	return e.wrapped
 }
 
 {{wrap (printf "New%s creates a new %s wrapping wrapped." .ErrorStruct .ErrorStruct) "// " 80}}
 func New{{.ErrorStruct}}(wrapped error, {{.Params}}) error {
-	return &{{.ErrorStruct}}{
-		LocalisableError: li18ngo.LocalisableError{
-			Data: {{.StructName}}{
-{{- range .Fields}}
-				{{.Note}}: {{lower .Note}},
-{{- end}}
-				Wrapped: wrapped.Error(),
-			},
-		},
-		Wrapped: wrapped,
+	td := {{.StructName}}{
+		{{.Base}}: {{.Base}}{},
 {{- range .Fields}}
 		{{.Note}}: {{lower .Note}},
 {{- end}}
+		Wrapped: wrapped.Error(),
+	}
+	return &{{.ErrorStruct}}{
+		LocalisableError: li18ngo.LocalisableError{Data: td},
+		{{.StructName}}:  td,
+		wrapped:          wrapped,
 	}
 }
 `
@@ -1466,6 +1474,10 @@ func renderErrorEntry(e underlierEntry, base string) (string, error) {
 // Helpers
 // ---------------------------------------------------------------------------
 
+// nonErrorFields returns all fields whose GoType is not "error". The
+// error-typed Wrapped field is handled implicitly by wrapper templates
+// as an unexported wrapped field on the error struct, so it must not
+// appear in the TemplData field loop or the constructor parameter list.
 func nonErrorFields(fields []fieldEntry) []fieldEntry {
 	var out []fieldEntry
 	for _, f := range fields {
