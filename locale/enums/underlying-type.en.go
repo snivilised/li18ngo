@@ -109,15 +109,17 @@ const (
 	UnderlyingTypeSentinelError // SentinelError
 
 	// UnderlyingTypeStaticErrorWrapper is a static error that wraps another
-	// error. The message text is fixed - {{.Wrapped}} must not appear in
-	// Other. Use UnderlyingTypeStaticErrorWrapperMsg when you need the
-	// wrapped error's text to appear in the translated message.
+	// error for Go's error chain (errors.Is/errors.As) only. The localised
+	// message text is fully fixed; the wrapped error's text does not appear
+	// in the translated output. Use UnderlyingTypeStaticErrorWrapperMsg when
+	// you want {{.Wrapped}} to appear inside the Other string.
 	UnderlyingTypeStaticErrorWrapper // StaticErrorWrapper
 
-	// UnderlyingTypeStaticErrorWrapperMsg is a static error that wraps
-	// another error and includes the wrapped error's message in the
-	// translated output via {{.Wrapped}}. Use this instead of
-	// UnderlyingTypeStaticErrorWrapper when Other contains {{.Wrapped}}.
+	// UnderlyingTypeStaticErrorWrapperMsg is a static error that wraps another
+	// error and includes the wrapped error's message text directly in the
+	// translated output via {{.Wrapped}} in Other. If the message text is
+	// fully fixed and you only need the wrapped error for the error chain,
+	// use UnderlyingTypeStaticErrorWrapper instead.
 	UnderlyingTypeStaticErrorWrapperMsg // StaticErrorWrapperMsg
 
 	// UnderlyingTypeDynamicError is a dynamic error with no wrapping.

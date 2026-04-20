@@ -15,7 +15,7 @@ Example entry:
 "root-command-config-file-usage": {
   MessageID:   "root-command-config-file-usage",
   Seed:        "RootCmdConfigFileUsage",
-  TypeName:    UnderlyingTypeDynamicCobra,
+  TypeName:    enums.UnderlyingTypeDynamicCobra,
   Description: "root command config flag usage",
   Story: "RootCmdConfigFileUsage is the usage string for the" +
     " config file flag on the root command.",
@@ -30,7 +30,7 @@ Example entry:
 },
 ```
 
-For a description of these types (`UnderlyingTemplData` and `UnderlyingField`) and how to define them, please refer to the source: [`underlying.go`](./locale/underlying.go)
+For a description of these types (`UnderlyingTemplData` and `UnderlyingField`) and how to define them, please refer to the source: [`underlying.go`](../../locale/underlying.go)
 
 ---
 
@@ -45,6 +45,7 @@ Before running `lingo`, the author needs to define entries inside a specific map
 ```go
 using (
   lingo "github.com/snivilised/li18ngo/locale"
+  "github.com/snivilised/li18ngo/locale/enums"
 )
 
 var _ = lingo.Underliers{
@@ -65,9 +66,11 @@ The `Underliers` map may be defined in any file of the user's choice as long as 
 Before trying to generate the code for all messages, it is advisable to use the dry run mode by using the `--dry-run` flag. Doing so invokes verification and shows the user if all entries are valid (see the section [Validation Rules](#validation-rules)
 below). As an aid, the user can use the `--verbose` flag to see extra output during validation phase.
 
-When all messages have been define, generate the i18n code, merely using (from the repo root):
+When all messages have been defined, generate the i18n code, merely using (from the repo root):
 
 > $ lingo
+
+Note: for error messages, avoid using the word `Error` as part of the Seed name, as the term `Error` is already included in the generated code. So instead of declaring an error message with a seed name of `FileNotFoundError`, just use `FileNotFound` instead.
 
 ## Generated Files
 
@@ -157,32 +160,40 @@ No dynamic fields are permitted and no constructor is generated.
 
 Used for long, parameterised descriptions in Cobra commands or flags.  
 Fields must be non-empty and correspond to template tokens.  
-Generates a `NewXxxTemplData` constructor.
+
+Generates:
+
+- `NewXxxTemplData` constructor
 
 ### UnderlyingTypeGeneralStatic
 
 Represents a static, non-error user message with no dynamic content.  
-Produces no constructor or data struct.
+
+Generates no constructor or data struct.
 
 ### UnderlyingTypeGeneralDynamic
 
 Represents a dynamic, non-error user message with one or more variable fields.  
-Each field maps to a template token.  
-A constructor `NewXxxTemplData` is generated.
+Each field maps to a template token.
+Generates:
+
+- `NewXxxTemplData` constructor
 
 ### UnderlyingTypeErrorStatic
 
-Defines an error message with fixed text and no fields.  
-Produces:
+Defines an error message with fixed text and no fields.
+
+Generates:
 
 - `XxxErrorTemplData`
 - `XxxError`
-- `ErrXxx` sentinel.
+- `ErrXxx` sentinel
 
 ### UnderlyingTypeErrorCore
 
-Defines a static core sentinel error intended for wrapping.  
-Produces:
+Defines a static core sentinel error intended for wrapping.
+
+Generates:
 
 - `XxxErrorTemplData`
 - `XxxError`
@@ -191,35 +202,54 @@ Produces:
 ### UnderlyingTypeErrorStaticWrapper
 
 Defines a static error that wraps another error implicitly.  
-No `Fields` are declared.  
+No `Fields` are declared.
+
 Generates:
 
+- `NewXxxError(wrapped error)` constructor
 - `XxxErrorTemplData`
 - `XxxError{Wrapped error}`
+- `Error()` and `Unwrap()` methods.
+
+### UnderlyingTypeStaticErrorWrapper
+
+Is a static error that wraps another error but does not include the wrapped
+error's message in the translated output via `{{.Wrapped}}`. Rather, the wrapped
+error is for Go's error chain (errors.Is/errors.As) only. The localised message
+text is fully fixed; the wrapped error's text does not appear in the translated
+output. If you need the wrapped error's content to appear in Other, then you know
+you're using the wrong message type; use `UnderlyingTypeStaticErrorWrapperMsg` instead.
+
+Generates:
+
 - `NewXxxError(wrapped error)`
+- `XxxErrorTemplData`
+- `XxxError{Wrapped error}`
 - `Error()` and `Unwrap()` methods.
 
 ### UnderlyingTypeStaticErrorWrapperMsg
 
-Is a static error that wraps
-another error and includes the wrapped error's message in the
-translated output via `{{.Wrapped}}`. Use this instead of
+Is a static error that wraps another error and includes the wrapped error's message
+in the translated output via `{{.Wrapped}}`. Use this instead of
 `UnderlyingTypeStaticErrorWrapper` when `Other` contains `{{.Wrapped}}`.
 
+Generates:
+
+- `NewXxxError(wrapped error)`
 - `XxxErrorTemplData`
 - `XxxError{Wrapped error}`
-- `NewXxxError(wrapped error)`
 - `Error()` and `Unwrap()` methods.
 
 ### UnderlyingTypeErrorDynamic
 
 Defines dynamic errors with variable content but no wrapping.  
 Fields must be present, but no `Wrapped` field.  
+
 Generates:
 
+- `NewXxxError(fields...)` constructor
 - `XxxTemplData`
 - `XxxError`
-- `NewXxxError(fields...)`
 
 ### UnderlyingTypeErrorDynamicWrapper
 
@@ -228,9 +258,9 @@ Fields must include exactly one `error` type named `Wrapped`.
 The constructor takes the wrapped error first, followed by other parameters.  
 Generates:
 
+- `NewXxxError(wrapped error, fields...)` constructor
 - `XxxTemplData` (stringified `Wrapped`)
 - `XxxError` (containing actual error)
-- `NewXxxError(wrapped error, fields...)`
 
 ---
 
@@ -241,23 +271,24 @@ Here's how a typical workflow looks end-to-end:
 1. **Define your message in the Underliers map**
 
    ```go
-   var _ = map[string]Underlying{
-    "root-command-config-file-usage": {
-      MessageID:   "root-command-config-file-usage",
-      Seed:        "RootCmdConfigFileUsage",
-      TypeName:    UnderlyingTypeCobraDynamic,
-      Description: "Usage string for the root command config flag.",
-      Story:       "RootCmdConfigFileUsage provides the help text for the config file flag.",
-      Other:       "config file (default is $HOME/{{.ConfigFileName}}.yml)",
-      Fields: []UnderlyingField{
+    var _ = map[string]Underlying{
+      "root-command-config-file-usage": {
+        MessageID:   "root-command-config-file-usage",
+        Seed:        "RootCmdConfigFileUsage",
+        TypeName:    enums.UnderlyingTypeDynamicCobra,
+        Description: "root command config flag usage",
+        Story: "RootCmdConfigFileUsage is the usage string for the" +
+          " config file flag on the root command.",
+        Other: "config file (default is $HOME/{{.ConfigFileName}}.yml)",
+        Fields: []lingo.UnderlyingField{
           {
-            Note: "ConfigFileName",
+            Note:   "ConfigFileName",
             GoType: "string",
-            Tale: "Base name of the config file without extension.",
+            Tale:   "is the base name of the config file without extension",
           },
+        },
       },
-    },
-   }
+    }
    ```
 
 2. **Run the generator**
@@ -267,28 +298,55 @@ Here's how a typical workflow looks end-to-end:
 3. **Generated output (excerpt)**
 
    ```go
-   // Code generated by lingo; DO NOT EDIT.
+    // Code generated by lingo; DO NOT EDIT.
 
-   type RootCmdConfigFileUsageTemplData struct {
-       ConfigFileName string
-   }
+    // =============================================================================
+    // 🧊 RootCmdConfigFileUsage
+    //
+    // RootCmdConfigFileUsage is the usage string for the config file flag on the
+    // root command.
+    // =============================================================================
 
-   func NewRootCmdConfigFileUsageTemplData(configFileName string) RootCmdConfigFileUsageTemplData {
-       return RootCmdConfigFileUsageTemplData{ConfigFileName: configFileName}
-   }
+    // RootCmdConfigFileUsageTemplData root command config flag usage.
+    type RootCmdConfigFileUsageTemplData struct {
+      agenorTemplData
+      // ConfigFileName is the base name of the config file without extension
+      ConfigFileName string
+    }
 
-   var RootCmdConfigFileUsage = i18n.Message{
-       ID:    "root-command-config-file-usage",
-       Other: "config file (default is $HOME/{{.ConfigFileName}}.yml)",
-   }
+    // Message returns the i18n message for RootCmdConfigFileUsageTemplData.
+    func (td RootCmdConfigFileUsageTemplData) Message() *i18n.Message {
+      return &i18n.Message{
+        ID:          "root-command-config-file-usage",
+        Description: "root command config flag usage",
+        Other:       "config file (default is $HOME/{{.ConfigFileName}}.yml)",
+      }
+    }
+
+    // NewRootCmdConfigFileUsageTemplData creates a new
+    // RootCmdConfigFileUsageTemplData.
+    func NewRootCmdConfigFileUsageTemplData(configFileName string) RootCmdConfigFileUsageTemplData {
+      return RootCmdConfigFileUsageTemplData{
+        agenorTemplData: agenorTemplData{},
+        ConfigFileName:  configFileName,
+      }
+    }
    ```
 
 4. **Usage at runtime**
 
    ```go
-   data := NewRootCmdConfigFileUsageTemplData("my-config")
-   localised := localizer.MustLocalizeMessage(&RootCmdConfigFileUsage, data)
-   fmt.Println(localised)
+    message := li18ngo.Text(locale.NewRootCmdConfigFileUsageTemplData(
+      viper.ConfigFileUsed()),
+    )
    ```
+
+Note: for static message types (when using a type such as `enums.UnderlyingTypeStaticGeneral`), using it is as simple as invoking the `Text` function with an instance of the template struct, eg:
+
+   ```go
+    message := li18ngo.Text(locale.SomeStaticTemplData{})
+   ```
+
+This simplicity of invocation is the reason why for static message types, a constructor function is not generated as it would be overkill to do so.
 
 ---

@@ -7,6 +7,7 @@
     "buildFlags": ["-tags=tools"]
   },
   "cSpell.words": [
+    "agenor",
     "astrolib",
     "avfs",
     "beezledub",
