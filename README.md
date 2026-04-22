@@ -57,3 +57,201 @@ To maintain localisation of the application, the user must take care to implemen
 + define template struct (__xxxTemplData__) in __src/i18n/messages.go__ and corresponding __Message()__ method. All messages are defined here in the same location, simplifying the message extraction process as all extractable strings occur at the same place. Please see [go-i18n](https://github.com/nicksnyder/go-i18n) for all translation/pluralisation options and other regional sensitive content.
 
 For more detailed workflow instructions relating to i18n, please see [i18n README](./resources/doc/i18n-README.md). For details on how defining translate-able content can be achieved consistently using code generation, see [Lingo](./resources/doc/LINGO.md)
+
+## 🚀 Coding Guidelines
+
+### Using li18ngo in Your Application
+
+`li18ngo` wraps `go-i18n` and adds a localisation lifecycle on top of it. The
+library distinguishes between two phases: __bootstrap__ (registering languages
+and activating a language) and __runtime__ (translating messages via `Text`).
+You must complete the bootstrap phase before making any `Text` calls, or the
+library will not behave correctly.
+
+---
+
+### Bootstrap Phase
+
+Before your application renders any localised string, call `Use` to activate
+the library and register your supported languages:
+
+```go
+err := li18ngo.Use(func(o *li18ngo.UseOptions) {
+    o.Tag = language.BritishEnglish
+    o.From = li18ngo.LoadFrom{
+        Path: "path/to/translations",
+        Sources: li18ngo.TranslationFiles{
+            li18ngo.Li18ngoSourceID: li18ngo.TranslationSource{
+                Name: "li18ngo",
+            },
+            <YourPackage>.SourceID: li18ngo.TranslationSource{
+                Name: "<your-app>",
+            },
+        },
+    }
+})
+```
+
+`Use` must be called exactly once per process lifetime, typically at the very
+start of your `main` function or, for CLI applications built on Cobra/Mamba,
+inside the bootstrap function that runs before any command executes.
+
+If you ship a library that builds on `li18ngo`, call `Register` instead of
+`Use` - `Register` is the per-library entry point that tells `li18ngo` about
+your translation sources so that a host application can load them:
+
+```go
+func init() {
+    li18ngo.Register(func(o *li18ngo.RegisterOptions) {
+        o.SourceID = SourceID
+        o.DefaultFS = &translationsFS
+    })
+}
+```
+
+The host application then includes your `SourceID` in its `Use` call, as shown
+above.
+
+😮‍💨 It needs to be acknowledged that building i18n compliant applications and libraries
+can be quite onerous and a real pain in the you know whats. For this reason, it is
+not mandatory to participate in the i18n infrastructure, just because one of your
+dependencies does. i18n is not mandatory, but invoking Use/Register is. If you do not want
+to participate in i18n, then just invoke these functions without passing in a registration
+function, ie you can just do this:
+
+for applications:
+
+```go
+  li18ngo.Use()
+```
+
+for libraries:
+
+```go
+  li18ngo.Register()
+```
+
+When no registration function is passed into Use/Register, then `Text` will just
+return the default text as created by the library/application author; ie the text
+you see in the `Other` field of the `TemplData` struct's `Message` method.
+
+---
+
+### Translating Messages at Runtime
+
+Once bootstrap is complete, translate a message by constructing its template
+data struct and passing it to `li18ngo.Text`:
+
+```go
+msg := li18ngo.Text(MyMessageTemplData{})
+```
+
+For messages that carry dynamic content, populate the exported fields of the
+template data struct before passing it:
+
+```go
+msg := li18ngo.Text(FileNotFoundTemplData{
+    Name: path,
+})
+```
+
+`Text` returns a plain `string`. It never returns an error - if something goes
+wrong (missing translation, uninitialised library), it falls back gracefully,
+so you do not need to check a return value beyond the string itself.
+
+When you define messages with dynamic content, then a helper function is provided
+to relieve the author from knowing the full way to compose the appropriate structs,
+eg:
+
+```go
+  msg := li18ngo.Text(locale.NewRootCmdConfigFileUsageTemplData(
+    viper.ConfigFileUsed()),
+  )
+```
+
+---
+
+### Defining Messages
+
+All user-facing strings are represented as template data structs typically in the
+`locale` package (but this can be overridden by using the `--locale` flag on `lingo`). There are distinct message patterns, summarised below. (For the full enumeration definition, see [UnderlyingType](./locale/enums/underlying-type-en.go))
+
+| Type | Emoji | Enum(UnderlyingType) | When to use |
+| --- | --- | --- | --- |
+| Cobra static | 🧊 | StaticCobra | Plain informational string, no variable content |
+| Cobra dynamic | 🧊 | DynamicCobra | Informational string with one or more variable tokens |
+| General static | 📨 | StaticGeneral | Plain informational string, no variable content |
+| General dynamic | 📨 | DynamicGeneral | Informational string with one or more variable tokens |
+| Static error | ❌ | StaticError | Fixed error message, no variable content |
+| Static sentinel error | ❌ | SentinelError | Fixed error message; produces an exported sentinel `var Err...`. Designed to be wrapped |
+| Static error (wrapper) | ❌ | StaticErrorWrapper | Error with no variable context that wraps an underlying error, wrapped error does nopt appear in translated output |
+| Static error (wrapper) | ❌ | StaticErrorWrapperMsg | Error with no variable context that wraps an underlying error, wrapped error appears in translated output |
+| Dynamic error (no wrap) | ❌ | DynamicError | Error carrying variable context, does not wrap another error |
+| Dynamic error (wrapper) | ❌ | DynamicErrorWrapper | Error with variable context that wraps an underlying error |
+
+Message IDs follow a strict convention:
+
+| Message kind | ID format |
+| --- | --- |
+| Non-error | `kebab-slug` |
+| Static error | `kebab-slug.static-error` |
+| Dynamic error | `kebab-slug.dynamic-error` |
+
+Never omit the `.static-error` / `.dynamic-error` suffix from error message
+IDs and never add those suffixes to non-error messages. This is just a suggested convention; the author is free to use whatever scheme they wish.
+
+---
+
+### Code Generation
+
+The `lingo` code generation tool manages the `messages-general-auto.go`,
+`messages-errors-auto.go` and `messages-cobra-auto.go` description files automatically. You
+should not hand-edit those generated files. The source of truth is
+the `Underliers` map - add or modify message
+descriptors there and re-run `lingo` to regenerate the output files. Full
+documentation for [Lingo](./resources/doc/LINGO.md) is covered separately.
+
+---
+
+### Translation Files
+
+Translation files are JSON and follow the `go-i18n` format. The active
+language is selected by the `Tag` passed to `Use`. If no translation file
+exists for the requested language, `go-i18n` falls back to the default
+language (typically `en-GB`, depending on how your `Use` call is
+configured).
+
+Place translation files in a directory that is either embedded via `go:embed`
+or readable from disk. Pass the corresponding `fs.FS` or path to `Use` via
+`LoadFrom`.
+
+---
+
+### Error Handling Conventions
+
+Static errors expose a package-level sentinel variable (`Err<Name>`) that
+callers can match using the standard `errors.Is` / `errors.As` functions - no
+generated helper wrappers are provided or needed:
+
+```go
+if errors.Is(err, locale.ErrFilterMissingType) {
+    // handle it
+}
+```
+
+Dynamic errors that wrap an underlying error implement `Unwrap`, so
+`errors.Is` and `errors.As` chains work correctly without any extra
+boilerplate.
+
+---
+
+### Troubleshooting
+
+| Symptom | Likely cause | Fix |
+| --- | --- | --- |
+| All messages return the fallback / English string despite setting a language | `Use` was not called before the first `Text` call | Move your `Use` call earlier in bootstrap, before any command or handler executes |
+| `Text` returns an empty string or panics | The message ID in the template data struct does not match the key in the translation JSON file | Check that `lingo` has been re-run after any change to `Underliers`, and that the translation file has been updated |
+| A library's messages are not translated | The library's `SourceID` is missing from the `Sources` map in `Use` | Add the library's `SourceID` and `TranslationSource` to the host application's `Use` call |
+| `Register` has no effect | `Register` was called after `Use` | `Register` must be called before `Use` - put it in a library `init` function |
+| Sentinel error does not match via `errors.Is` | Caller wrapped the sentinel in a new error without preserving the chain | Use `fmt.Errorf("...: %w", locale.ErrFoo)` to wrap, not `fmt.Errorf("...: %v", ...)` |
+| Generated files contain stale or missing messages | `lingo` has not been run after editing `Underliers` | Run `lingo` and commit the regenerated files |

@@ -25,6 +25,7 @@
     "dupl",
     "Elts",
     "errcheck",
+    "Errorf",
     "exportloopref",
     "extendio",
     "faydeaudeau",

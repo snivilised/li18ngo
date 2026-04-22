@@ -79,6 +79,28 @@ func Text(data Localisable) string {
 	panic(ErrSafePanicWarning)
 }
 
+// Render is the library-tier localisation function. It is safe to call
+// even if Use has not been called by the host application - it falls back
+// to the canonical English string defined in data.Message().Other. Library
+// authors should use Render (via LocalisableError) rather than Text.
+func Render(data Localisable) string {
+	if tx != nil {
+		return tx.Localise(data)
+	}
+
+	return data.Message().Other
+}
+
+// Register is the library-tier equivalent of Use. A library that depends on
+// li18ngo should call Register to add its translation sources to the active
+// translator. Libraries must never call Use - that is an application
+// bootstrap concern.
+func Register(options ...UseOptionFn) error {
+	// Same mechanics as Use; the distinction is semantic and enforced by
+	// convention. A future lint rule can enforce this boundary.
+	return Use(options...)
+}
+
 func containsLanguage(languages SupportedLanguages, tag language.Tag) bool {
 	return lo.ContainsBy(languages, func(t language.Tag) bool {
 		return t == tag

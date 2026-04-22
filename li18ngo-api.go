@@ -11,8 +11,9 @@ var (
 	// DefaultLanguage represents the default language of this module
 	DefaultLanguage = translate.DefaultLanguage
 
-	// ErrSafePanicWarning is the error raised as a panic if the client
-	// has accidentally not called Use before working with li18ngo.
+	// ErrSafePanicWarning is emitted via panic if application code calls Text
+	// before Use has been invoked. Library code should use Describe instead,
+	// which falls back gracefully to the canonical message string.
 	ErrSafePanicWarning = translate.ErrSafePanicWarning
 
 	// Li18ngoSourceID the id that represents this module. If a client want
@@ -30,6 +31,12 @@ var (
 	// Not threadsafe.
 	Text = translate.Text
 
+	// Render is the library-tier localisation function. It is safe to call
+	// even if Use has not been called by the host application - it falls back
+	// to the canonical English string defined in data.Message().Other. Library
+	// authors should use Render (via LocalisableError) rather than Text.
+	Render = translate.Render
+
 	// Use, must be called before any string data can be translated.
 	// If requesting the default language, then only the language Tag
 	// needs to be provided. If the requested language is not the default
@@ -41,6 +48,12 @@ var (
 	// used. The client MUST call Use before using any functionality in
 	// this package.
 	Use = translate.Use
+
+	// Register is the library-tier equivalent of Use. A library that depends on
+	// li18ngo should call Register to add its translation sources to the active
+	// translator. Libraries must never call Use - that is an application
+	// bootstrap concern.
+	Register = translate.Register
 )
 
 type (

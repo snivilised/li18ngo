@@ -232,3 +232,13 @@ tasks:
         -sourceLanguage "en-US"
         -outdir ./i18n/temp
         ./locale/out/translate.en-US.json ./i18n/deploy/active.en-US.json
+
+  # === vscode ===============================================
+
+  # use this if you notice that vscode is starting to act strangely, such as not picking
+  # up changes to files, or not showing the correct file structure. This will reset
+  # the workspace storage for vscode, which can sometimes become corrupted and cause issues.
+  reset-vscode:
+    cmds:
+      - rm -rf ~/Library/Application\ Support/Code/User/workspaceStorage
+
