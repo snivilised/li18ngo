@@ -19,8 +19,9 @@ const (
 )
 
 var (
-	// ErrSafePanicWarning the error emitted via a panic if the client has not called
-	// Use before using any functionality in this package.
+	// ErrSafePanicWarning is emitted via panic if application code calls Text
+	// before Use has been invoked. Library code should use Describe instead,
+	// which falls back gracefully to the canonical message string.
 	ErrSafePanicWarning = errors.New("please ensure li18ngo.Use is invoked")
 )
 
