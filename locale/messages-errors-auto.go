@@ -35,18 +35,18 @@ func (td NotADirectoryTemplData) Message() *i18n.Message {
 // NotADirectoryError File system path is not a directory.
 type NotADirectoryError struct {
 	li18ngo.LocalisableError
-	Path string
+	NotADirectoryTemplData
 }
 
 // NewNotADirectoryError creates a new NotADirectoryError.
 func NewNotADirectoryError(path string) error {
+	td := NotADirectoryTemplData{
+		Li18ngoTemplData: Li18ngoTemplData{},
+		Path:             path,
+	}
 	return &NotADirectoryError{
-		LocalisableError: li18ngo.LocalisableError{
-			Data: NotADirectoryTemplData{
-				Path: path,
-			},
-		},
-		Path: path,
+		LocalisableError:       li18ngo.LocalisableError{Data: td},
+		NotADirectoryTemplData: td,
 	}
 }
 
@@ -77,21 +77,19 @@ func (td PathNotFoundTemplData) Message() *i18n.Message {
 // PathNotFoundError Directory or file path does not exist.
 type PathNotFoundError struct {
 	li18ngo.LocalisableError
-	Name string
-	Path string
+	PathNotFoundTemplData
 }
 
 // NewPathNotFoundError creates a new PathNotFoundError.
 func NewPathNotFoundError(name string, path string) error {
+	td := PathNotFoundTemplData{
+		Li18ngoTemplData: Li18ngoTemplData{},
+		Name:             name,
+		Path:             path,
+	}
 	return &PathNotFoundError{
-		LocalisableError: li18ngo.LocalisableError{
-			Data: PathNotFoundTemplData{
-				Name: name,
-				Path: path,
-			},
-		},
-		Name: name,
-		Path: path,
+		LocalisableError:      li18ngo.LocalisableError{Data: td},
+		PathNotFoundTemplData: td,
 	}
 }
 
@@ -121,17 +119,17 @@ func (td ThirdPartyWrapperErrorTemplData) Message() *i18n.Message {
 // ThirdPartyWrapperError Wrapper for third-party errors.
 type ThirdPartyWrapperError struct {
 	li18ngo.LocalisableError
-	Wrapped error
+	wrapped error
 }
 
 // Error returns the combined wrapped and localised error message.
 func (e ThirdPartyWrapperError) Error() string {
-	return fmt.Sprintf("%v, %v", e.Wrapped.Error(), li18ngo.Text(e.Data))
+	return fmt.Sprintf("%v, %v", e.wrapped.Error(), li18ngo.Text(e.LocalisableError.Data))
 }
 
 // Unwrap returns the wrapped error.
 func (e ThirdPartyWrapperError) Unwrap() error {
-	return e.Wrapped
+	return e.wrapped
 }
 
 // NewThirdPartyWrapperError creates a new ThirdPartyWrapperError wrapping
@@ -141,6 +139,6 @@ func NewThirdPartyWrapperError(wrapped error) error {
 		LocalisableError: li18ngo.LocalisableError{
 			Data: ThirdPartyWrapperErrorTemplData{Wrapped: wrapped.Error()},
 		},
-		Wrapped: wrapped,
+		wrapped: wrapped,
 	}
 }
