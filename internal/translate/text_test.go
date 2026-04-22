@@ -12,6 +12,10 @@ import (
 )
 
 var _ = Describe("Text", func() {
+	BeforeEach(func() {
+		translate.ResetTx()
+	})
+
 	Context("failure", func() {
 		When("Use has not been called", func() {
 			It("🧪 should: raise the correct panic", func() {
@@ -59,12 +63,6 @@ var _ = Describe("Text", func() {
 				})
 			})
 		})
-	})
-})
-
-var _ = Describe("Text", func() {
-	BeforeEach(func() {
-		translate.ResetTx()
 	})
 
 	Context("after Register but before Use", func() {
