@@ -160,6 +160,7 @@ func run() error {
 	localeFlagVal := flag.String("locale", "", "path to locale dir relative to repo root")
 	dryRun := flag.Bool("dry-run", false, "validate only, do not write files")
 	verbose := flag.Bool("verbose", false, "print per-message diagnostic info during validation")
+	isLib := flag.Bool("lib", false, "generate Render calls (library module) instead of Text calls (application module)")
 	flag.Parse()
 
 	repoRoot, err := findRepoRoot()
@@ -186,7 +187,7 @@ func run() error {
 		return nil
 	}
 
-	return generate(localeDir, pkgName, baseStruct, underliers)
+	return generate(localeDir, pkgName, baseStruct, underliers, *isLib)
 }
 
 // ---------------------------------------------------------------------------
@@ -768,13 +769,13 @@ type outputFile struct {
 	src  []byte
 }
 
-func generate(dir, pkgName, baseStruct string, entries []underlierEntry) error {
+func generate(dir, pkgName, baseStruct string, entries []underlierEntry, useRender bool) error {
 	cobra, general, errs := splitEntries(entries)
 
 	var outputs []outputFile
 
 	if len(cobra) > 0 {
-		src, err := generateCobra(pkgName, baseStruct, cobra)
+		src, err := generateCobra(pkgName, baseStruct, cobra, useRender)
 		if err != nil {
 			return fmt.Errorf("generating cobra file: %w", err)
 		}
@@ -785,7 +786,7 @@ func generate(dir, pkgName, baseStruct string, entries []underlierEntry) error {
 	}
 
 	if len(general) > 0 {
-		src, err := generateGeneral(pkgName, baseStruct, general)
+		src, err := generateGeneral(pkgName, baseStruct, general, useRender)
 		if err != nil {
 			return fmt.Errorf("generating general file: %w", err)
 		}
@@ -796,7 +797,7 @@ func generate(dir, pkgName, baseStruct string, entries []underlierEntry) error {
 	}
 
 	if len(errs) > 0 {
-		src, err := generateErrors(pkgName, baseStruct, errs)
+		src, err := generateErrors(pkgName, baseStruct, errs, useRender)
 		if err != nil {
 			return fmt.Errorf("generating errors file: %w", err)
 		}
@@ -864,9 +865,13 @@ type templateData struct {
 	// ErrorComment is the doc comment for the XxxError struct, used in
 	// all error templates.
 	ErrorComment string
+
+	// UseRender controls whether Error() string methods call li18ngo.Render
+	// (library modules) or li18ngo.Text (application modules). Set via --lib.
+	UseRender bool
 }
 
-func newTemplateData(e underlierEntry, base string) templateData {
+func newTemplateData(e underlierEntry, base string, useRender bool) templateData {
 	// Fields exposed to templates are the non-error fields only. The
 	// error-typed Wrapped field is handled implicitly by the wrapper
 	// templates as an unexported wrapped field on the error struct, so
@@ -891,6 +896,7 @@ func newTemplateData(e underlierEntry, base string) templateData {
 		StructComment:  structDocComment(structName, e.Description),
 		ErrorTDComment: structDocComment(errorTD, e.Description),
 		ErrorComment:   structDocComment(errorStruct, e.Description),
+		UseRender:      useRender,
 	}
 }
 
@@ -1098,7 +1104,7 @@ type {{.ErrorStruct}} struct {
 
 // Error returns the combined wrapped and localised error message.
 func (e {{.ErrorStruct}}) Error() string {
-	return fmt.Sprintf("%v, %v", e.wrapped.Error(), li18ngo.Text(e.LocalisableError.Data))
+	return fmt.Sprintf("%v, %v", e.wrapped.Error(), {{if .UseRender}}li18ngo.Render(e.LocalisableError.Data){{else}}li18ngo.Text(e.LocalisableError.Data){{end}})
 }
 
 // Unwrap returns the wrapped error.
@@ -1148,7 +1154,7 @@ type {{.ErrorStruct}} struct {
 
 // Error returns the combined wrapped and localised error message.
 func (e {{.ErrorStruct}}) Error() string {
-	return fmt.Sprintf("%v, %v", e.wrapped.Error(), li18ngo.Text(e.LocalisableError.Data))
+	return fmt.Sprintf("%v, %v", e.wrapped.Error(), {{if .UseRender}}li18ngo.Render(e.LocalisableError.Data){{else}}li18ngo.Text(e.LocalisableError.Data){{end}})
 }
 
 // Unwrap returns the wrapped error.
@@ -1261,7 +1267,7 @@ type {{.ErrorStruct}} struct {
 
 // Error returns the combined wrapped and localised error message.
 func (e {{.ErrorStruct}}) Error() string {
-	return fmt.Sprintf("%v, %v", e.wrapped.Error(), li18ngo.Text(e.LocalisableError.Data))
+	return fmt.Sprintf("%v, %v", e.wrapped.Error(), {{if .UseRender}}li18ngo.Render(e.LocalisableError.Data){{else}}li18ngo.Text(e.LocalisableError.Data){{end}})
 }
 
 // Unwrap returns the wrapped error.
@@ -1373,7 +1379,7 @@ func banner(e underlierEntry) string {
 // Cobra generation
 // ---------------------------------------------------------------------------
 
-func generateCobra(pkg, base string, entries []underlierEntry) ([]byte, error) {
+func generateCobra(pkg, base string, entries []underlierEntry, useRender bool) ([]byte, error) {
 	var sb strings.Builder
 	sb.WriteString(renderHeader(pkg, []string{
 		"github.com/nicksnyder/go-i18n/v2/i18n",
@@ -1382,7 +1388,7 @@ func generateCobra(pkg, base string, entries []underlierEntry) ([]byte, error) {
 		sb.WriteString("\n")
 		sb.WriteString(banner(e))
 		sb.WriteString("\n\n")
-		out, err := execTemplate("cobra", tmplCobra, newTemplateData(e, base))
+		out, err := execTemplate("cobra", tmplCobra, newTemplateData(e, base, useRender))
 		if err != nil {
 			return nil, fmt.Errorf("cobra entry %q: %w", e.Seed, err)
 		}
@@ -1395,7 +1401,7 @@ func generateCobra(pkg, base string, entries []underlierEntry) ([]byte, error) {
 // General generation
 // ---------------------------------------------------------------------------
 
-func generateGeneral(pkg, base string, entries []underlierEntry) ([]byte, error) {
+func generateGeneral(pkg, base string, entries []underlierEntry, useRender bool) ([]byte, error) {
 	var sb strings.Builder
 	sb.WriteString(renderHeader(pkg, []string{
 		"github.com/nicksnyder/go-i18n/v2/i18n",
@@ -1404,7 +1410,7 @@ func generateGeneral(pkg, base string, entries []underlierEntry) ([]byte, error)
 		sb.WriteString("\n")
 		sb.WriteString(banner(e))
 		sb.WriteString("\n\n")
-		out, err := execTemplate("general", tmplGeneral, newTemplateData(e, base))
+		out, err := execTemplate("general", tmplGeneral, newTemplateData(e, base, useRender))
 		if err != nil {
 			return nil, fmt.Errorf("general entry %q: %w", e.Seed, err)
 		}
@@ -1417,7 +1423,7 @@ func generateGeneral(pkg, base string, entries []underlierEntry) ([]byte, error)
 // Error generation
 // ---------------------------------------------------------------------------
 
-func generateErrors(pkg, base string, entries []underlierEntry) ([]byte, error) {
+func generateErrors(pkg, base string, entries []underlierEntry, useRender bool) ([]byte, error) {
 	needFmt := false
 	for _, e := range entries {
 		switch e.TypeName {
@@ -1441,7 +1447,7 @@ func generateErrors(pkg, base string, entries []underlierEntry) ([]byte, error) 
 		sb.WriteString("\n")
 		sb.WriteString(banner(e))
 		sb.WriteString("\n\n")
-		out, err := renderErrorEntry(e, base)
+		out, err := renderErrorEntry(e, base, useRender)
 		if err != nil {
 			return nil, err
 		}
@@ -1450,8 +1456,8 @@ func generateErrors(pkg, base string, entries []underlierEntry) ([]byte, error) 
 	return formatSource(sb.String())
 }
 
-func renderErrorEntry(e underlierEntry, base string) (string, error) {
-	td := newTemplateData(e, base)
+func renderErrorEntry(e underlierEntry, base string, useRender bool) (string, error) {
+	td := newTemplateData(e, base, useRender)
 	switch e.TypeName {
 	case underlyingTypeStaticError:
 		return execTemplate("errorStatic", tmplErrorStatic, td)
