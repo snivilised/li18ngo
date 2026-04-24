@@ -264,6 +264,25 @@ Generates:
 
 ---
 
+## Partitioning definitions into custom files via File property
+
+For larger code bases requiring a greater amount of translatable content, it may become onerous
+to have all all definitions contained within the 3 default files: `messages-general-auto.go`, `messages-cobra-auto.go` and `messages-errors-auto.go`. For this reason there is a facility to be
+able to partition definitions into custom files, using the optional `File` property on `UnderlyingTemplData`.
+
+When specified, the value defined for `File` becomes a prefix to either `-general-auto.go`, `-cobra-auto.go` or `-errors-auto.go` for the file that the message definitions will be inserted into. The following table shows the files created for an example user defined file prefixes:
+
+| File prefix | Category | Output Filename |
+| --- | --- | --- |
+| automation | general | automation-general-auto.go |
+| automation | cobra | automation-cobra-auto.go |
+| reg_ex- | general | reg_ex-general-auto.go |
+| Termination | error | Termination-general-auto.go |
+
+Only letters, numbers, dashes and underscores are valid characters to be used in the `File` property. Any violations will result in immediate termination and no files are generated. If you need to move an existing message definition from one file to another, the easiest way to achieve this is to simply remove the existing `-auto.go` generated file, define the new file location by specifying the `File` property then re-running `lingo`. Since the tool doesn't detect if a message definition is effectively being moved from one file to another, if you don't delete the existing file, you may end up with an error because multiple definitions of the same message will occur in the same package across different files.
+
+---
+
 ## Example: Full Generation Flow
 
 Here's how a typical workflow looks end-to-end:

@@ -1,11 +1,17 @@
 // lingo is a code generator for go-i18n template data structs.
 //
 // It reads a package-level variable of type Underliers from the target
-// repository's locale package and generates three files:
+// repository's locale package and generates output files grouped by message
+// kind (cobra, general, errors). By default it produces three files:
 //
 //   - messages-cobra-auto.go
 //   - messages-errors-auto.go
 //   - messages-general-auto.go
+//
+// When an Underliers entry sets the optional File field, the message is routed
+// to a custom output file sharing the same kind suffix but using File as the
+// filename prefix instead of "messages". For example, File: "system-automation"
+// with a general message produces system-automation-general-auto.go.
 //
 // # Installation
 //
@@ -69,7 +75,8 @@ import (
 //     and full-prefix form). String() derives from that map so no further
 //     change is needed there.
 //  4. Add the new constant to whichever switch statements require it:
-//     validate, splitEntries, emoji, generateErrors, renderErrorEntry.
+//     validate, generate (entry grouping), kindSuffixFor, emoji,
+//     generateErrors, renderErrorEntry.
 // ---------------------------------------------------------------------------
 
 type underlyingType int
@@ -105,7 +112,7 @@ const (
 // underlyingTypeNames maps the string constant names as they appear in source
 // back to their local enum values. Two forms are registered for each value:
 //
-//   - trimmed:    "StaticCobra"              (selector's Sel.Name after stripping prefix)
+//   - trimmed:     "StaticCobra"               (selector's Sel.Name after stripping prefix)
 //   - full-prefix: "UnderlyingTypeStaticCobra" (unqualified ident form)
 var underlyingTypeByName = map[string]underlyingType{
 	"Undefined":                           underlyingTypeUndefined,
@@ -306,6 +313,59 @@ func searchForLocaleDir(repoRoot string) (string, error) {
 }
 
 // ---------------------------------------------------------------------------
+// File partitioning
+// ---------------------------------------------------------------------------
+
+// sanitiseFilePrefix validates and normalises a File prefix value from an
+// UnderlyingTemplData entry. The rules are:
+//   - Only letters, digits, underscores and dashes are permitted.
+//   - A trailing dash is stripped to prevent double-dash sequences when the
+//     kind suffix is appended.
+//   - An empty string is valid and means "use the default file for this kind".
+//   - Any character outside the permitted set is a hard error.
+func sanitiseFilePrefix(s string) (string, error) {
+	for _, r := range s {
+		if !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '_' && r != '-' {
+			return "", fmt.Errorf(
+				"invalid character %q in File prefix %q: only letters, digits, underscores and dashes are permitted",
+				r, s,
+			)
+		}
+	}
+
+	return strings.TrimRight(s, "-"), nil
+}
+
+// kindSuffixFor returns the filename kind suffix for a given underlying type.
+// The suffix is appended to the file prefix to form the complete filename,
+// e.g. "messages-" + "general-auto.go" = "messages-general-auto.go".
+func kindSuffixFor(t underlyingType) string {
+	switch t {
+	case underlyingTypeStaticCobra, underlyingTypeDynamicCobra:
+		return "cobra-auto.go"
+	case underlyingTypeStaticGeneral, underlyingTypeDynamicGeneral:
+		return "general-auto.go"
+	default:
+		return "errors-auto.go"
+	}
+}
+
+// resolveOutputFile returns the output filename for a message given its
+// sanitised file prefix and kind suffix. kindSuffix must be one of
+// "cobra-auto.go", "general-auto.go", or "errors-auto.go".
+//
+// When prefix is empty the default "messages" prefix is used, reproducing the
+// existing three-file behaviour. When prefix is non-empty it replaces
+// "messages" entirely.
+func resolveOutputFile(prefix, kindSuffix string) string {
+	if prefix == "" {
+		return "messages-" + kindSuffix
+	}
+
+	return prefix + "-" + kindSuffix
+}
+
+// ---------------------------------------------------------------------------
 // AST parsing
 // ---------------------------------------------------------------------------
 
@@ -318,6 +378,13 @@ type underlierEntry struct {
 	Story       string
 	Other       string
 	Fields      []fieldEntry
+	// File is the optional output-file prefix parsed from the Underliers entry.
+	// An empty string means "use the default file for this message kind". When
+	// non-empty, lingo routes the message to a custom output file whose name is
+	// formed by appending the kind suffix to this prefix, for example:
+	//   File: "system-automation" + general kind -> system-automation-general-auto.go
+	// The value is validated and normalised by sanitiseFilePrefix before use.
+	File string
 }
 
 type fieldEntry struct {
@@ -517,6 +584,8 @@ func extractEntry(cl *ast.CompositeLit) (underlierEntry, error) {
 				return e, err
 			}
 			e.Fields = fields
+		case "File":
+			e.File = stringLit(kv.Value)
 		}
 	}
 	return e, nil
@@ -628,6 +697,13 @@ func validate(entries []underlierEntry, verbose bool) error {
 			errs = append(errs, validationError{e.MessageID, "", "duplicate MessageID"})
 		}
 		seen[e.MessageID] = true
+
+		// Validate the File prefix if one has been supplied.
+		if e.File != "" {
+			if _, err := sanitiseFilePrefix(e.File); err != nil {
+				errs = append(errs, validationError{e.MessageID, "File", err.Error()})
+			}
+		}
 
 		ut := e.TypeName
 
@@ -769,42 +845,94 @@ type outputFile struct {
 	src  []byte
 }
 
+// generate groups all entries by their resolved output file and kind, runs the
+// appropriate generator for each group, and writes the resulting files. The
+// default three-file layout is preserved when no entry sets a File prefix. Any
+// entry that does set File is routed to a custom output file of the same kind.
 func generate(dir, pkgName, baseStruct string, entries []underlierEntry, useRender bool) error {
-	cobra, general, errs := splitEntries(entries)
+	// Group entries by (sanitised prefix, kind suffix). Entries that share the
+	// same resolved filename are collected together so that each output file is
+	// generated in a single pass with a single header.
+	type group struct {
+		cobra   []underlierEntry
+		general []underlierEntry
+		errs    []underlierEntry
+	}
+
+	groups := map[string]*group{}
+
+	for _, e := range entries {
+		// sanitiseFilePrefix was already called during validation so the only
+		// error path here would require a bug in validate; we treat it as fatal.
+		prefix, err := sanitiseFilePrefix(e.File)
+		if err != nil {
+			return fmt.Errorf("entry %q: %w", e.Seed, err)
+		}
+
+		filename := resolveOutputFile(prefix, kindSuffixFor(e.TypeName))
+		g, ok := groups[filename]
+		if !ok {
+			g = &group{}
+			groups[filename] = g
+		}
+
+		switch e.TypeName {
+		case underlyingTypeStaticCobra, underlyingTypeDynamicCobra:
+			g.cobra = append(g.cobra, e)
+		case underlyingTypeStaticGeneral, underlyingTypeDynamicGeneral:
+			g.general = append(g.general, e)
+		default:
+			g.errs = append(g.errs, e)
+		}
+	}
+
+	// Collect and sort output filenames for deterministic ordering.
+	filenames := make([]string, 0, len(groups))
+	for filename := range groups {
+		filenames = append(filenames, filename)
+	}
+	sort.Strings(filenames)
 
 	var outputs []outputFile
 
-	if len(cobra) > 0 {
-		src, err := generateCobra(pkgName, baseStruct, cobra, useRender)
-		if err != nil {
-			return fmt.Errorf("generating cobra file: %w", err)
-		}
-		outputs = append(outputs, outputFile{
-			path: filepath.Join(dir, "messages-cobra-auto.go"),
-			src:  src,
-		})
-	}
+	for _, filename := range filenames {
+		g := groups[filename]
 
-	if len(general) > 0 {
-		src, err := generateGeneral(pkgName, baseStruct, general, useRender)
-		if err != nil {
-			return fmt.Errorf("generating general file: %w", err)
+		if len(g.cobra) > 0 {
+			sort.Slice(g.cobra, func(i, j int) bool { return g.cobra[i].Seed < g.cobra[j].Seed })
+			src, err := generateCobra(pkgName, baseStruct, g.cobra, useRender)
+			if err != nil {
+				return fmt.Errorf("generating %s: %w", filename, err)
+			}
+			outputs = append(outputs, outputFile{
+				path: filepath.Join(dir, filename),
+				src:  src,
+			})
 		}
-		outputs = append(outputs, outputFile{
-			path: filepath.Join(dir, "messages-general-auto.go"),
-			src:  src,
-		})
-	}
 
-	if len(errs) > 0 {
-		src, err := generateErrors(pkgName, baseStruct, errs, useRender)
-		if err != nil {
-			return fmt.Errorf("generating errors file: %w", err)
+		if len(g.general) > 0 {
+			sort.Slice(g.general, func(i, j int) bool { return g.general[i].Seed < g.general[j].Seed })
+			src, err := generateGeneral(pkgName, baseStruct, g.general, useRender)
+			if err != nil {
+				return fmt.Errorf("generating %s: %w", filename, err)
+			}
+			outputs = append(outputs, outputFile{
+				path: filepath.Join(dir, filename),
+				src:  src,
+			})
 		}
-		outputs = append(outputs, outputFile{
-			path: filepath.Join(dir, "messages-errors-auto.go"),
-			src:  src,
-		})
+
+		if len(g.errs) > 0 {
+			sort.Slice(g.errs, func(i, j int) bool { return g.errs[i].Seed < g.errs[j].Seed })
+			src, err := generateErrors(pkgName, baseStruct, g.errs, useRender)
+			if err != nil {
+				return fmt.Errorf("generating %s: %w", filename, err)
+			}
+			outputs = append(outputs, outputFile{
+				path: filepath.Join(dir, filename),
+				src:  src,
+			})
+		}
 	}
 
 	for _, o := range outputs {
@@ -814,23 +942,6 @@ func generate(dir, pkgName, baseStruct string, entries []underlierEntry, useRend
 		fmt.Printf("lingo: wrote %s\n", o.path)
 	}
 	return nil
-}
-
-func splitEntries(entries []underlierEntry) (cobra, general, errs []underlierEntry) {
-	for _, e := range entries {
-		switch e.TypeName {
-		case underlyingTypeStaticCobra, underlyingTypeDynamicCobra:
-			cobra = append(cobra, e)
-		case underlyingTypeStaticGeneral, underlyingTypeDynamicGeneral:
-			general = append(general, e)
-		default:
-			errs = append(errs, e)
-		}
-	}
-	sort.Slice(cobra, func(i, j int) bool { return cobra[i].Seed < cobra[j].Seed })
-	sort.Slice(general, func(i, j int) bool { return general[i].Seed < general[j].Seed })
-	sort.Slice(errs, func(i, j int) bool { return errs[i].Seed < errs[j].Seed })
-	return
 }
 
 // ---------------------------------------------------------------------------

@@ -50,6 +50,23 @@ type UnderlyingTemplData struct {
 	// wrapper types exactly one entry must have GoType "error" and
 	// Name "Wrapped".
 	Fields []UnderlyingField
+
+	// File is an optional output-file prefix. When empty, the message is written
+	// to the default output file for its kind:
+	//   - messages-cobra-auto.go
+	//   - messages-general-auto.go
+	//   - messages-errors-auto.go
+	//
+	// When File is set, it is used as a prefix instead of "messages", producing
+	// a custom output file of the same kind, for example:
+	//   - File: "system-automation" + cobra kind  -> system-automation-cobra-auto.go
+	//   - File: "system-automation" + general kind -> system-automation-general-auto.go
+	//   - File: "system-automation" + error kind   -> system-automation-errors-auto.go
+	//
+	// Only letters, digits, underscores and dashes are permitted in File. A
+	// trailing dash is silently stripped to prevent double-dash sequences in the
+	// resulting filename. Any other invalid character is a terminating error.
+	File string
 }
 
 // Underliers is the map type read by i18n-gen at code-generation time.
@@ -58,7 +75,7 @@ type Underliers map[string]UnderlyingTemplData
 
 // underliers is the single source of truth for all i18n messages in this
 // package. Edit this map and run go generate to regenerate the auto files.
-var underliers = Underliers{
+var _ = Underliers{
 	// -------------------------------------------------------------------------
 	// General messages
 	// -------------------------------------------------------------------------
@@ -158,11 +175,4 @@ var underliers = Underliers{
 			},
 		},
 	},
-}
-
-func init() {
-	// Prevent the underliers variable from being flagged as unused by the
-	// Go compiler. lingo reads this variable from the AST at generate
-	// time; it is not referenced at runtime.
-	_ = underliers
 }
