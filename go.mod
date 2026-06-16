@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/nicksnyder/go-i18n/v2 v2.6.1
-	github.com/onsi/ginkgo/v2 v2.28.3
+	github.com/onsi/ginkgo/v2 v2.31.0
 	github.com/onsi/gomega v1.42.0
 	github.com/pkg/errors v0.9.1
 	github.com/snivilised/nefilim v0.1.11
