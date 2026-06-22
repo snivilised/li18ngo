@@ -7,7 +7,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.31.0
 	github.com/onsi/gomega v1.42.0
 	github.com/pkg/errors v0.9.1
-	github.com/snivilised/nefilim v0.1.13
+	github.com/snivilised/nefilim v0.1.14
 	golang.org/x/text v0.38.0
 )
 
